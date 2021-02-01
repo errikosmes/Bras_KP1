@@ -9,11 +9,16 @@ Le but de ce projet est de créer une interface pour de futurs utilisateurs qui 
 ### Frontend
 - [x] Prendre en main la bibliotèque Qt de Python
 - [x] Afficher un flux vidéo
-- [ ] Faire une première interface 
+- [ ] Faire une première interface
+- [ ] Rendre fonctionnel cette interface
+
 
 ### Backend
-- [x] Repérer les croisements
 - [x] Récupérer la vidéo du robot
+- [x] Repérer les croisements ( perpendiculaires )
+- [ ] Détecter des croisements obliques
 - [ ] Récupérer les coordonnées d'un point
+- [ ] Se déplacer au croisement
+- [ ] Créer un " Workspace " pour le robot
 
 
