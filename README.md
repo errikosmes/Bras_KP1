@@ -5,11 +5,16 @@ Le but de ce projet est de créer une interface pour de futurs utilisateurs qui 
 
 ## A Faire 
 - [x] S'approprier les fonctions de l'API fournies
-- [x] Gérer le flux vidéo
-- [x] Repérer les croisements
-- [] Récupérer les coordonnées d'un point
+
+  ###Frontend
 - [x] Prendre en main la bibliotèque Qt de Python
+- [x] Gérer le flux vidéo
 - [ ] Faire une première interface 
+
+  ###Backend
+
+- [x] Repérer les croisements
+- [ ] Récupérer les coordonnées d'un point
 - [ ] Faire diagramme *après* aide
 
 
