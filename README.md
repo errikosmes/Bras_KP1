@@ -8,12 +8,12 @@ Le but de ce projet est de créer une interface pour de futurs utilisateurs qui 
 
 ### Frontend
 - [x] Prendre en main la bibliotèque Qt de Python
-- [x] Gérer le flux vidéo
+- [x] Afficher un flux vidéo
 - [ ] Faire une première interface 
 
 ### Backend
 - [x] Repérer les croisements
+- [x] Récupérer la vidéo du robot
 - [ ] Récupérer les coordonnées d'un point
-- [ ] Faire diagramme *après* aide
 
 
