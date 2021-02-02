@@ -1,56 +1,71 @@
 import cv2
 import numpy as np 
 
-#define the events for the 
-# mouse_click. 
-def select_rect(event, x, y, flags, param): 
-    rectP1 = param[0]
-    rectP2 = param[1]
-    global clickInRect
-    
-    # to check if left mouse button was clicked 
-    if event == cv2.EVENT_LBUTTONDOWN:
-        clickCoord = [x, y]
-        clickInRect = inRectangle(rectP1, rectP2, clickCoord)
-        print(clickCoord);
+def inRectangle(ctrCoord, size, mouseCoord):
+    # check if (mouseCoord) are inside a rectangle of centre (ctrCoord) and size (size)
 
-def inRectangle(rectP1, rectP2, mouseCoord):
-    if (mouseCoord[0]>min(rectP1[0], rectP2[0]) and mouseCoord[0]<max(rectP1[0], rectP2[0]) and mouseCoord[1]>min(rectP1[1], rectP2[1]) and mouseCoord[1]<max(rectP1[1], rectP2[1])):
+    x1 = ctrCoord[0]-size
+    y1 = ctrCoord[1]-size
+    x2 = ctrCoord[0]+size
+    y2 = ctrCoord[1]+size
+
+    if (mouseCoord[0]>min(x1, x2) and mouseCoord[0]<max(x1, x2) and mouseCoord[1]>min(y1, y2) and mouseCoord[1]<max(y1, y2)):
         return True
     else: 
         return False
 
+# define the events for the mouse_click. 
+def selectRectCallback(event, x, y, flags, param):
+    # update PIO lists
+    # to check if left mouse button was clicked 
+    if event == cv2.EVENT_LBUTTONDOWN:
+        POI = param[0]
+        PIOSelected = param[1]
+    
+        clickCoord = [x, y]
+
+        for point in POI:
+            # check if point is inside current PIO region (PIO rectangle)
+            if (inRectangle(point, 30, clickCoord)):
+                # if it's selected remove from PIOSelected
+                if point in POISelected: POISelected.remove(point)                
+                # else add to PIOSelected
+                else: POISelected.append(point)
+
+        param[0] = POI
+        param[1] = PIOSelected
+        # print(clickCoord);
+
+def drawSelected(img, rectCenter, size):
+    cv2.rectangle(img, (rectCenter[0]-size, rectCenter[1]-size), (rectCenter[0]+size, rectCenter[1]+size), (0, 255, 0), 3)
+    return img
+
+def drawUnselected(img, rectCenter, size):
+    cv2.rectangle(img, (rectCenter[0]-size, rectCenter[1]-size), (rectCenter[0]+size, rectCenter[1]+size), (0, 0, 255), 3)
+    return img
 
 # init
-rectP1 = (318-50, 386-50)
-rectP2 = (318+50, 386+50)
-param = (rectP1, rectP2)
-selected = 0
-clickInRect = False
-
-img = cv2.imread('grid_test.png', cv2.IMREAD_COLOR)
-cv2.rectangle(img, rectP1, rectP2, (0, 0, 255), 3)
-# img = cv2.circle(img, rectP1, radius=3, color=(0, 0, 255), thickness=-1)
-# img = cv2.circle(img, rectP2, radius=3, color=(0, 0, 255), thickness=-1)
+POI = [(318, 387), (734, 387)] #Point Of Interest
+POISelected = []
 clickCoord = [0, 0]
-  
+
+# load example img
+img = cv2.imread('grid_test.png', cv2.IMREAD_COLOR)
+
 # show image 
-cv2.imshow('image', img)
-cv2.setMouseCallback('image', select_rect, param) 
+cv2.imshow('image', img) # needs to be called before setMouseCallback
+cv2.setMouseCallback('image', selectRectCallback, param=[POI, POISelected]) 
    
 # keep looping until the 'q' key is pressed
 while True:
+    # draw region of interest rectangles 
+    for point in POI: 
+        if point in POISelected: drawSelected(img, point, 30)
+        else: drawUnselected(img, point, 30)
+
 	# display the image and wait for a keypress
     cv2.imshow("image", img)
-    if clickInRect: 
-        if (selected):
-            cv2.rectangle(img, rectP1, rectP2, (0, 0, 255), 3)
-            selected = 0
-        else: 
-            cv2.rectangle(img, rectP1, rectP2, (0, 255, 0), 3)
-            selected = 1
-        clickInRect = False
-    key = cv2.waitKey(1) & 0xFF
+    key = cv2.waitKey(10) & 0xFF
   
 # close all the opened windows. 
 cv2.destroyAllWindows() 
