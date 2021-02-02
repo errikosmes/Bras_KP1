@@ -79,6 +79,9 @@ while True:
     img = imgCached.copy()
     key = cv2.waitKey(10) & 0xFF
     
+    if key in [27, ord("q")]:  # Will break loop if the user press Escape or Q
+        break
+    
   
 # close all the opened windows. 
 cv2.destroyAllWindows() 
