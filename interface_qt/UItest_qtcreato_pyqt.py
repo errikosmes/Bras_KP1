@@ -1,23 +1,14 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/leo/Documents/projet_bras_robotique/interface_qt/test_qtcreato_pyqt.ui'
+# Form implementation generated from reading ui file '/home/leo/Documents/Bras_KP1/interface_qt/test_qtcreato_pyqt.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.10.1
 #
 # WARNING! All changes made in this file will be lost!
-import cv2
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-var = 0
-
-
 
 class Ui_MainWindow(object):
-    
-    def test_value(self):
-        var = self.verticalSlider.value()
-        print(var)
-    
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
@@ -61,8 +52,6 @@ class Ui_MainWindow(object):
         self.verticalSlider.setGeometry(QtCore.QRect(220, 190, 16, 160))
         self.verticalSlider.setOrientation(QtCore.Qt.Vertical)
         self.verticalSlider.setObjectName("verticalSlider")
-        #self.verticalSlider.event.(self.test_value)
-        
         self.image = QtWidgets.QFrame(self.centralwidget)
         self.image.setGeometry(QtCore.QRect(350, 120, 311, 231))
         self.image.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -78,8 +67,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        #self.pushButton_2.clicked.connect(self.test_value)
-        
+        self.pushButton_2.clicked.connect(self.checkBox.click)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -89,9 +77,6 @@ class Ui_MainWindow(object):
         self.pushButton_2.setText(_translate("MainWindow", "quitter"))
         self.checkBox.setText(_translate("MainWindow", "test1"))
         self.checkBox_2.setText(_translate("MainWindow", "tamre"))
-    
-
-
 
 
 if __name__ == "__main__":
