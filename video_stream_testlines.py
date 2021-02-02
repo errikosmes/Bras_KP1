@@ -10,7 +10,8 @@ import numpy as np
 from time import sleep
 
 # Set robot address
-robot_ip_address = "10.10.10.10"
+#robot_ip_address = "10.10.10.10"
+robot_ip_address = "169.254.200.200"
 
 # Set Observation Pose. It's where the robot will be placed for streaming
 observation_pose = PoseObject(
@@ -24,28 +25,28 @@ def change_space(px_x,px_y,offset_x=0,offset_y=0):
     lg_x = 0.178
     lg_y = 0.188
     size_img = 480
-    
+
     xi = px_x*(lg_x/size_img)
     yi = px_y*(lg_y/size_img)
-    
+
     x0 = 0.163
     y0=-0.093
-        
+
     x=xi+x0+offset_x
     y=yi+y0+offset_x
-    
+
     return x,y
 
-def clean_line(img,lines): 
+def clean_line(img,lines):
     lines_cpy= np.copy(lines)
 
     for i in range ( len(lines) ):
         for j in range ( len(lines) ):
-            if (i!=j) and (lines[i][0][0] / lines[j][0][0] <= 1.13) and  (lines[i][0][0] / lines[j][0][0] >= 0.9) : 
-                if ( (lines_cpy[j][0][0]!= 0) and ( lines_cpy[i][0][0]!=0) ): 
+            if (i!=j) and (lines[i][0][0] / lines[j][0][0] <= 1.13) and  (lines[i][0][0] / lines[j][0][0] >= 0.9) :
+                if ( (lines_cpy[j][0][0]!= 0) and ( lines_cpy[i][0][0]!=0) ):
                     lines_cpy[j][0][0]= 0
 
-       
+
     lines_net=[i for i in lines_cpy if int(i[0][0]) != 0 and (int(i[0][0]) <=len(img[0])-5) ]
     print('Clean lines ok')
     return lines_net
@@ -62,9 +63,9 @@ def find_croisement(lines):
             vert.append(i)
         else:
             print('Droite ni horizontale ni verticale',i)
-    
+
     for i in range ( len(horiz)  ):
-        x0i= np.cos(horiz[i][0][1]) * horiz[i][0][0] 
+        x0i= np.cos(horiz[i][0][1]) * horiz[i][0][0]
         y0i= np.sin(horiz[i][0][1]) * horiz[i][0][0]
         for j in range ( len(vert) ):
             y0j= np.sin(vert[j][0][1]) * vert[j][0][0]
@@ -73,7 +74,7 @@ def find_croisement(lines):
     return(inter)
 
 def line_inter(line_img):
-                
+
     gray = cv.cvtColor(line_img,cv.COLOR_BGR2GRAY)
     edges = cv.Canny(gray,50,150,apertureSize = 3)
     lines = cv.HoughLines(edges,1,np.pi/180,300)
@@ -82,7 +83,7 @@ def line_inter(line_img):
     lines_net = clean_line(line_img,lines)
     inter = find_croisement(lines_net)
     for i in range ( len(lines_net) ):
-        for rho,theta in lines_net[i]:  
+        for rho,theta in lines_net[i]:
             print('Lines :', i)
             a = np.cos(theta)
             b = np.sin(theta)
@@ -94,17 +95,17 @@ def line_inter(line_img):
             y2 = int(y0 - 1000*(a))
                 # and (y0 <= 10):
             cv2.line(line_img,(x1,y1),(x2,y2),(0,0,255),1)
-    
+
     return inter
-    
+
 def circle_inter(line_img,inter):
     cpt=0
-    for i in inter:                    
+    for i in inter:
         print(cpt,' : Inter:',i)
         line_img = cv2.circle(line_img, i , radius=15, color=(0, 255, 255), thickness=2)
-        line_img = cv2.putText(line_img, str(cpt) , i, cv2.FONT_HERSHEY_SIMPLEX , 2, color=(0,0,0), thickness=3) 
+        line_img = cv2.putText(line_img, str(cpt) , i, cv2.FONT_HERSHEY_SIMPLEX , 2, color=(0,0,0), thickness=3)
         cpt+=1
-    
+
 
 def video_stream(niryo_one_client):
     # Getting calibration param
@@ -133,9 +134,9 @@ def video_stream(niryo_one_client):
         # - Display
         # Concatenating raw image and undistorted image
         concat_ims = concat_imgs((img_raw, img_undistort))
-    
-        
-        
+
+
+
         # Concatenating extracted workspace with markers annotation
         if img_workspace is not None:
             res_img_markers = concat_imgs((res_img_markers, resize_img(img_workspace, height=res_img_markers.shape[0])))
@@ -148,32 +149,32 @@ def video_stream(niryo_one_client):
             # line_img = cv.flip(line_img,1)
         else:
             line_img=None
-        
-        
+
+
         if line_img is not None:
             inter = line_inter(line_img)
-            circle_inter(line_img,inter)            
-            show_img('Workspace', line_img, wait_ms=10)    
-                       
+            circle_inter(line_img,inter)
+            show_img('Workspace', line_img, wait_ms=10)
+
         # PICK FROM X,Y
             while True:
                 print("Nb de croisement :",len(inter))
                 usr_inter = input()
                 if(usr_inter=='q'):
                     break
-                
+
                 usr_inter = inter[int(usr_inter)]
-                
+
                 inter_1_x, inter_1_y= change_space(usr_inter[1],usr_inter[0],0.01,0)
                 pick_pose = PoseObject(
                     x=inter_1_x, y=inter_1_y, z=0.135,
                     roll=-2.70, pitch=1.57, yaw=-2.7
                 )
                 niryo_one_client.pick_from_pose(*pick_pose.to_list())
-                
+
                 niryo_one_client.move_pose(*observation_pose.to_list())
-                
-        
+
+
         sleep(5)
         key = show_img("Markers", res_img_markers, wait_ms=10)
         if key in [27, ord("q")]:  # Will break loop if the user press Escape or Q
@@ -192,4 +193,3 @@ if __name__ == '__main__':
     video_stream(client)
     # Releasing connection
     client.quit()
-
