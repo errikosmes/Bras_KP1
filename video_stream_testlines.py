@@ -12,7 +12,6 @@ from time import sleep
 # Set robot address
 #robot_ip_address = "10.10.10.10"
 robot_ip_address = "169.254.200.200"
-#testde ces grand mort
 
 # Set Observation Pose. It's where the robot will be placed for streaming
 observation_pose = PoseObject(
