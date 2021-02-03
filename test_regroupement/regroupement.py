@@ -19,7 +19,6 @@ observation_pose = PoseObject(
 )
 
 
-
 def change_space(px_x,px_y,offset_x=0,offset_y=0):
     lg_x = 0.178
     lg_y = 0.188
@@ -68,7 +67,7 @@ def find_croisement(lines):
         y0i= np.sin(horiz[i][0][1]) * horiz[i][0][0]
         for j in range ( len(vert) ):
             y0j= np.sin(vert[j][0][1]) * vert[j][0][0]
-            inter.append((x0i, y0i+y0j))
+            inter.append((int(x0i), int(y0i+y0j)))
     print('Find croisement ok')
     return(inter)
 
@@ -99,22 +98,67 @@ def line_inter(line_img):
 
     return inter
 
-def circle_inter(line_img,inter):
-    cpt=0
-    for i in inter:
-        print(cpt,' : Inter:',i)
-        line_img = cv2.circle(line_img, i , radius=15, color=(0, 255, 255), thickness=2)
-        line_img = cv2.putText(line_img, str(cpt) , i, cv2.FONT_HERSHEY_SIMPLEX , 2, color=(0,0,0), thickness=3)
-        cpt+=1
+def drawUnselected(img, rectCenter, size):
+    cv2.rectangle(img, (rectCenter[0]-size, rectCenter[1]-size), (rectCenter[0]+size, rectCenter[1]+size), (0, 0, 255), 3)
+    return img
 
+def inRectangle(ctrCoord, size, mouseCoord):
+    # check if (mouseCoord) are inside a rectangle of centre (ctrCoord) and size (size)
+    x1 = ctrCoord[0]-size
+    y1 = ctrCoord[1]-size
+    x2 = ctrCoord[0]+size
+    y2 = ctrCoord[1]+size
+
+    if (mouseCoord[0]>min(x1, x2) and mouseCoord[0]<max(x1, x2) and mouseCoord[1]>min(y1, y2) and mouseCoord[1]<max(y1, y2)):
+        return True
+    else: 
+        return False
+
+# define the events for the mouse_click. 
+def selectRectCallback(event, x, y, flags, param):
+    # check if left mouse button was clicked and update PIO lists
+    if event == cv2.EVENT_LBUTTONDOWN:
+        POI = param[0]
+        POISelected = param[1]
+        regionSize = param[2]
+    
+        clickCoord = [x, y]
+
+        for point in POI:
+            # check if point is inside current PIO region (PIO rectangle)
+            if (inRectangle(point, regionSize, clickCoord)):
+                # if it's selected remove from PIOSelected
+                if point in POISelected: POISelected.remove(point)                
+                # else add to PIOSelected
+                else: POISelected.append(point)
+
+        param[0] = POI
+        param[1] = POISelected
+        # print(clickCoord);
+
+def drawSelected(img, rectCenter, size, nb):
+    font      = cv2.FONT_HERSHEY_SIMPLEX
+    offset    =  (20, -40)
+    fontScale = 0.75
+    fontColor = (0, 255, 0)
+    lineType  = 2
+
+    cv2.rectangle(img, (rectCenter[0]-size, rectCenter[1]-size), (rectCenter[0]+size, rectCenter[1]+size), (0, 255, 0), 3)
+    # cv2.circle(img, (rectCenter[0]-size, rectCenter[1]-size), 15, (0, 255, 0), -1)
+    cv2.putText(img, str(nb), (rectCenter[0]+offset[0], rectCenter[1]+offset[1]), font, fontScale,fontColor, lineType)
+
+    return img
 
 def video_stream(niryo_one_client):
     # Getting calibration param
+    print("1")
     _, mtx, dist = niryo_one_client.get_calibration_object()
     # Moving to observation pose
+    print("i am here")
     niryo_one_client.move_pose(*observation_pose.to_list())
 
-    while "User do not press Escape neither Q":
+
+    while "workspace_not_fine" :
 
         init=time.time()
         # Getting image
@@ -150,45 +194,66 @@ def video_stream(niryo_one_client):
         if img_workspace is not None:
             line_img =resize_img(img_workspace, height=res_img_markers.shape[0])
             # line_img = cv.flip(line_img,1)
+            break
         else:
             line_img=None
 
-        x1 =time.time()
-        if line_img is not None:
-            inter = line_inter(line_img)
-            x1 =time.time()
-            circle_inter(line_img,inter)
-            x3 =time.time()
-            show_img('Workspace', line_img, wait_ms=10)
-            x3 =time.time()
+    
+    x1 =time.time()
+
+    x3 =time.time()
 
 
+    POI = line_inter(line_img) #Points Of Interest
+    POISelected = []
+    clickCoord = [0, 0]
+    regionSize = 30 
 
+    show_img('Workspace', line_img, wait_ms=10)
+    cv2.setMouseCallback('Workspace', selectRectCallback, param=[POI, POISelected, regionSize]) 
+    imgCached = line_img.copy()
+    while True :
+        # draw region of interest rectangles 
+        for point in POI: 
+            if point in POISelected: drawSelected(line_img, point, regionSize, POISelected.index(point))
+            else: drawUnselected(line_img,point,regionSize)
+        
 
-        # PICK FROM X,Y
-        while True:
-            print("Nb de croisement :",len(inter))
-            usr_inter ='q';
-                #usr_inter = input()
-            if(usr_inter=='q'):
-                break
+        key = show_img('Workspace', line_img)
+        line_img = imgCached.copy()
 
-            usr_inter = inter[int(usr_inter)]
-
-            inter_1_x, inter_1_y= change_space(usr_inter[1],usr_inter[0],0.01,0)
-            pick_pose = PoseObject(x=inter_1_x, y=inter_1_y, z=0.135,roll=-2.70, pitch=1.57, yaw=-2.7)
-            niryo_one_client.pick_from_pose(*pick_pose.to_list())
-
-            niryo_one_client.move_pose(*observation_pose.to_list())
-
-            y=time.time()
-
-        #sleep(5)
-        key = show_img("Markers", res_img_markers, wait_ms=10)
-        if key in [27, ord("q")]:  # Will break loop if the user press Escape or Q
+        if (key & 0xFF) is (ord('\n') or ord('\r')):  # Will break loop if the user press Escape or Q
             break
+    x3 =time.time()
+
+
+
+
+    # # PICK FROM X,Y
+    # while True:
+    #     print("Nb de croisement :",len(inter))
+    #     usr_inter ='q';
+    #         #usr_inter = input()
+    #     if(usr_inter=='q'):
+    #         break
+
+    #     usr_inter = inter[int(usr_inter)]
+
+    #     inter_1_x, inter_1_y= change_space(usr_inter[1],usr_inter[0],0.01,0)
+    #     pick_pose = PoseObject(x=inter_1_x, y=inter_1_y, z=0.135,roll=-2.70, pitch=1.57, yaw=-2.7)
+    #     niryo_one_client.pick_from_pose(*pick_pose.to_list())
+
+    #     niryo_one_client.move_pose(*observation_pose.to_list())
+
+    #     y=time.time()
+
+    #sleep(5)
+    # key = show_img("Markers", res_img_markers, wait_ms=10)
+    # if key in [27, ord("q")]:  # Will break loop if the user press Escape or Q
+    #     break
 
     niryo_one_client.set_learning_mode(True)
+
 
 
 if __name__ == '__main__':
@@ -196,8 +261,10 @@ if __name__ == '__main__':
     client = NiryoOneClient()
     client.connect(robot_ip_address)
     # Calibrate robot if robot needs calibration
+    print("connecte")
     client.calibrate(CalibrateMode.AUTO)
     # Launching main process
+    print("avant")
     video_stream(client)
     # Releasing connection
     client.quit()
