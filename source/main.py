@@ -8,8 +8,8 @@ from time import sleep
 
 # Inits
 # Set robot address
-#robot_ip_address = "10.10.10.10"
-robot_ip_address = "169.254.200.200"
+robot_ip_address = "10.10.10.10"
+#robot_ip_address = "169.254.200.200"
 
 # Set Observation Pose. It's where the robot will be placed for streaming
 observation_pose = PoseObject(
@@ -221,7 +221,7 @@ def select_and_pick(client) :
         pick_pose = PoseObject(x=inter_1_x, y=inter_1_y, z=0.135,roll=-2.70, pitch=1.57, yaw=-2.7)
         client.pick_from_pose(*pick_pose.to_list())
         client.move_pose(*observation_pose.to_list())
-        sleep(5)
+        sleep(2)
 
     client.set_learning_mode(True)
 
