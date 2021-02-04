@@ -159,104 +159,91 @@ def drawSelected(img, rectCenter, size, nb):
 
     return img
 
-def video_stream(niryo_one_client):
-    # Getting calibration param
-    _, mtx, dist = niryo_one_client.get_calibration_object()
-    # Moving to observation pose
-    niryo_one_client.move_pose(*observation_pose.to_list())
 
-    while "workspace_not_found" :
-        init = time.time()
-        
-        # Getting image
-        status, img_compressed = niryo_one_client.get_img_compressed()
-        if status is not True:
-            print("error with Niryo One's service")
-            break
+###########################################""
 
-        img_raw = uncompress_image(img_compressed) # Uncompressing image
-        img_undistort = undistort_image(img_raw, mtx, dist) # Undistorting
-        workspace_found, res_img_markers = debug_markers(img_undistort) # Trying to find markers
+# Connect to robot
+client = NiryoOneClient()
+client.connect(robot_ip_address)
+# Calibrate robot if robot needs calibration
+client.calibrate(CalibrateMode.AUTO)
+# Launching main process
 
-        # Trying to extract workspace if possible
-        if workspace_found: img_workspace = extract_img_workspace(img_undistort, workspace_ratio=1.0)
-        else: img_workspace = None
+# Getting calibration param
+_, mtx, dist = client.get_calibration_object()
+# Moving to observation pose
+client.move_pose(*observation_pose.to_list())
 
-        # - Display
-        # Concatenating raw image and undistorted image
-        concat_ims = concat_imgs((img_raw, img_undistort))
-
-        # Concatenating extracted workspace with markers annotation
-        if img_workspace is not None: res_img_markers = concat_imgs((res_img_markers, resize_img(img_workspace, height=res_img_markers.shape[0])))
-
-        # Showing images
-        show_img("Images raw & undistorted", concat_ims, wait_ms=0)
-
-        if img_workspace is not None:
-            line_img =resize_img(img_workspace, height=res_img_markers.shape[0])
-            # line_img = cv.flip(line_img,1)
-            break
-        else:
-            line_img=None
-
-    x1 = time.time()
-    x3 = time.time()
-
-    POI = line_inter(line_img) #Points Of Interest
-    POISelected = []
-    clickCoord = [0, 0]
-    regionSize = 30 
-
-    show_img('Workspace', line_img, wait_ms=10)
-    cv2.setMouseCallback('Workspace', selectRectCallback, param=[POI, POISelected, regionSize]) 
-    imgCached = line_img.copy()
+while "workspace_not_found" :
+    init = time.time()
     
-    while True:
-        # draw region of interest rectangles 
-        for point in POI: 
-            if point in POISelected: drawSelected(line_img, point, regionSize, POISelected.index(point))
-            else: drawUnselected(line_img,point,regionSize)
-        
-        key = show_img('Workspace', line_img)
-        line_img = imgCached.copy()
+    # Getting image
+    status, img_compressed = client.get_img_compressed()
+    if status is not True:
+        print("error with Niryo One's service")
+        break
 
-        if (key & 0xFF) is (ord('\n') or ord('\r')):  # Will break loop if the user press Escape or Q
-            break
+    img_raw = uncompress_image(img_compressed) # Uncompressing image
+    img_undistort = undistort_image(img_raw, mtx, dist) # Undistorting
+    workspace_found, res_img_markers = debug_markers(img_undistort) # Trying to find markers
+
+    # Trying to extract workspace if possible
+    if workspace_found: img_workspace = extract_img_workspace(img_undistort, workspace_ratio=1.0)
+    else: img_workspace = None
+
+    # - Display
+    # Concatenating raw image and undistorted image
+    concat_ims = concat_imgs((img_raw, img_undistort))
+
+    # Concatenating extracted workspace with markers annotation
+    if img_workspace is not None: res_img_markers = concat_imgs((res_img_markers, resize_img(img_workspace, height=res_img_markers.shape[0])))
+
+    # Showing images
+    show_img("Images raw & undistorted", concat_ims, wait_ms=0)
+
+    if img_workspace is not None:
+        line_img =resize_img(img_workspace, height=res_img_markers.shape[0])
+        # line_img = cv.flip(line_img,1)
+        # line_img = cv.flip(line_img,0)
+
+        break
+    else:
+        line_img=None
+
+x1 = time.time()
+x3 = time.time()
+
+POI = line_inter(line_img) #Points Of Interest
+POISelected = []
+clickCoord = [0, 0]
+regionSize = 30 
+
+show_img('Workspace', line_img, wait_ms=10)
+cv2.setMouseCallback('Workspace', selectRectCallback, param=[POI, POISelected, regionSize]) 
+imgCached = line_img.copy()
+
+while True:
+    # draw region of interest rectangles 
+    for point in POI: 
+        if point in POISelected: drawSelected(line_img, point, regionSize, POISelected.index(point))
+        else: drawUnselected(line_img,point,regionSize)
     
-    x3 = time.time()
+    key = show_img('Workspace', line_img)
+    line_img = imgCached.copy()
 
-    # # PICK FROM X,Y
-    # while True:
-    #     print("Nb de croisement :",len(inter))
-    #     usr_inter ='q';
-    #         #usr_inter = input()
-    #     if(usr_inter=='q'):
-    #         break
+    if (key & 0xFF) is (ord('\n') or ord('\r')):  # Will break loop if the user press Escape or Q
+        break
 
-    #     usr_inter = inter[int(usr_inter)]
+x3 = time.time()
 
-    #     inter_1_x, inter_1_y= change_space(usr_inter[1],usr_inter[0],0.01,0)
-    #     pick_pose = PoseObject(x=inter_1_x, y=inter_1_y, z=0.135,roll=-2.70, pitch=1.57, yaw=-2.7)
-    #     niryo_one_client.pick_from_pose(*pick_pose.to_list())
+# # PICK FROM POISelected
+for point in POISelected :
+    inter_1_x, inter_1_y= change_space(point[1],point[0],0.01,0) #revoir les offsets ?
+    pick_pose = PoseObject(x=inter_1_x, y=inter_1_y, z=0.135,roll=-2.70, pitch=1.57, yaw=-2.7)
+    client.pick_from_pose(*pick_pose.to_list())
+    client.move_pose(*observation_pose.to_list())
+    sleep(5)
 
-    #     niryo_one_client.move_pose(*observation_pose.to_list())
-
-    #     y=time.time()
-
-    #sleep(5)
-    # key = show_img("Markers", res_img_markers, wait_ms=10)
-    # if key in [27, ord("q")]:  # Will break loop if the user press Escape or Q
-    #     break
-
-    niryo_one_client.set_learning_mode(True)
-
-if __name__ == '__main__':
-    # Connect to robot
-    client = NiryoOneClient()
-    client.connect(robot_ip_address)
-    # Calibrate robot if robot needs calibration
-    client.calibrate(CalibrateMode.AUTO)
-    # Launching main process
-    video_stream(client)
-    # Releasing connection
-    client.quit()
+client.set_learning_mode(True)
+# Releasing connection
+client.quit()
