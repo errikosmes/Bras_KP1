@@ -1,10 +1,14 @@
 # Imports
+import logging
+import threading
 from niryo_one_tcp_client import *
 from niryo_one_camera import *
 import cv2 as cv
 import numpy as np
 from time import sleep
-
+from API.croisement import *
+from API.draw_rectangle import *
+from API.workspace_referential import *
 
 # Inits
 # Set robot address
@@ -17,141 +21,8 @@ observation_pose = PoseObject(
     roll=0, pitch=1.57, yaw=-0.2,
 )
 
-# Functions
-def change_space(px_x, px_y, offset_x=0, offset_y=0):
-    lg_x = 0.178
-    lg_y = 0.188
-    size_img = 480
 
-    xi = px_x*(lg_x/size_img)
-    yi = px_y*(lg_y/size_img)
-
-    x0 = 0.163
-    y0 = -0.093
-
-    x = xi+x0+offset_x
-    y = yi+y0+offset_x
-
-    return x, y
-
-def clean_line(img,lines):
-    lines_cpy= np.copy(lines)
-
-    for i in range (len(lines)):
-        for j in range (len(lines)):
-            if (i!=j) and (lines[i][0][0] / lines[j][0][0] <= 1.13) and  (lines[i][0][0] / lines[j][0][0] >= 0.9) :
-                if ((lines_cpy[j][0][0]!= 0) and (lines_cpy[i][0][0]!=0)):
-                    lines_cpy[j][0][0]= 0
-
-
-    lines_net = [i for i in lines_cpy if int(i[0][0]) != 0 and (int(i[0][0]) <=len(img[0])-5)]
-    print('Clean lines ok')
-    
-    return lines_net
-
-def find_croisement(lines):
-    horiz = []
-    vert = []
-    inter = []
-
-    for i in lines:
-        if i[0][1] < 0.5 and i[0][1] > -0.5:
-            horiz.append(i)
-        elif i[0][1] < np.pi/2 + 0.1 and i[0][1] > np.pi/2 - 0.1 :
-            vert.append(i)
-        else:
-            print('Droite ni horizontale ni verticale',i)
-
-    for i in range (len(horiz)):
-        x0i = np.cos(horiz[i][0][1]) * horiz[i][0][0]
-        y0i = np.sin(horiz[i][0][1]) * horiz[i][0][0]
-
-        for j in range (len(vert)):
-            y0j = np.sin(vert[j][0][1]) * vert[j][0][0]
-            inter.append((int(x0i), int(y0i+y0j)))
-    
-    print('Find croisement ok')
-    return(inter)
-
-def line_inter(line_img):
-    gray = cv.cvtColor(line_img, cv.COLOR_BGR2GRAY)
-    edges = cv.Canny(gray, 50, 150, apertureSize = 3)
-    lines = cv.HoughLines(edges, 1, np.pi/180, 300)
-    
-    if lines is None: return None
-
-    lines_net = clean_line(line_img, lines)
-    inter = find_croisement(lines_net)
-
-    for i in range (len(lines_net)):
-        for rho,theta in lines_net[i]:
-            print('Lines :', i)
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a*rho
-            y0 = b*rho
-            x1 = int(x0 + 1000*(-b))
-            y1 = int(y0 + 1000*(a))
-            x2 = int(x0 - 1000*(-b))
-            y2 = int(y0 - 1000*(a))
-                # and (y0 <= 10):
-            cv2.line(line_img, (x1,y1), (x2,y2), (0,0,255), 1)
-
-    return inter
-
-def drawUnselected(img, rectCenter, size):
-    cv2.rectangle(img, (rectCenter[0]-size, rectCenter[1]-size), (rectCenter[0]+size, rectCenter[1]+size), (0, 0, 255), 3)
-    return img
-
-def inRectangle(ctrCoord, size, mouseCoord):
-    # check if (mouseCoord) are inside a rectangle of centre (ctrCoord) and size (size)
-    x1 = ctrCoord[0]-size
-    y1 = ctrCoord[1]-size
-    x2 = ctrCoord[0]+size
-    y2 = ctrCoord[1]+size
-
-    if (mouseCoord[0]>min(x1, x2) and mouseCoord[0]<max(x1, x2) and mouseCoord[1]>min(y1, y2) and mouseCoord[1]<max(y1, y2)):
-        return True
-    else: 
-        return False
-
-# define the events for the mouse_click. 
-def selectRectCallback(event, x, y, flags, param):
-    # check if left mouse button was clicked and update PIO lists
-    if event == cv2.EVENT_LBUTTONDOWN:
-        POI = param[0]
-        POISelected = param[1]
-        regionSize = param[2]
-    
-        clickCoord = [x, y]
-
-        for point in POI:
-            # check if point is inside current PIO region (PIO rectangle)
-            if (inRectangle(point, regionSize, clickCoord)):
-                # if it's selected remove from PIOSelected
-                if point in POISelected: POISelected.remove(point)                
-                # else add to PIOSelected
-                else: POISelected.append(point)
-
-        param[0] = POI
-        param[1] = POISelected
-        # print(clickCoord);
-
-def drawSelected(img, rectCenter, size, nb):
-    font      = cv2.FONT_HERSHEY_SIMPLEX
-    offset    = (20, -40)
-    fontScale = 0.75
-    fontColor = (0, 255, 0)
-    lineType  = 2
-
-    cv2.rectangle(img, (rectCenter[0]-size, rectCenter[1]-size), (rectCenter[0]+size, rectCenter[1]+size), (0, 255, 0), 3)
-    # cv2.circle(img, (rectCenter[0]-size, rectCenter[1]-size), 15, (0, 255, 0), -1)
-    cv2.putText(img, str(nb), (rectCenter[0]+offset[0], rectCenter[1]+offset[1]), font, fontScale,fontColor, lineType)
-
-    return img
-
-
-def select_and_pick(client) :
+def select_and_pick(client):
 
     # Getting calibration param
     _, mtx, dist = client.get_calibration_object()
@@ -234,9 +105,11 @@ if __name__ == '__main__' :
 
     try :
         select_and_pick(client)
-    except :
+    except Exception as e:
+        print(e)
         client.set_learning_mode(True)
    
     # Releasing connection
     client.quit()
-
+    
+    
