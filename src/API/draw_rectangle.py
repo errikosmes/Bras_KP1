@@ -32,6 +32,7 @@ def selectRectCallback(event, x, y, flags, param):
         clickCoord = [x, y]
 
         for point in POI:
+            point=tuple(point)
             # check if point is inside current PIO region (PIO rectangle)
             if (inRectangle(point, regionSize, clickCoord)):
                 # if it's selected remove from PIOSelected
