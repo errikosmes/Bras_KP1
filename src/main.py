@@ -58,95 +58,104 @@ def select_and_pick2(client):
     global sensibilite
     global space_lines
     global space_point
-    
+
     def stream_init(client, observation_pose, workspace_ratio=1.0):
-    
+
          # Getting calibration param
         _, mtx, dist = client.get_calibration_object()
         # Moving to observation pose
         client.move_pose(*observation_pose.to_list())
         sleep(1)
         while "workspace_not_found" :
-            
+
             # Getting image
             status, img_compressed = client.get_img_compressed()
             if status is not True:
                 print("error with Niryo One's service")
                 break
-    
+
             img_raw = uncompress_image(img_compressed) # Uncompressing image
             img_undistort = undistort_image(img_raw, mtx, dist) # Undistorting
             workspace_found, res_img_markers = debug_markers(img_undistort) # Trying to find markers
-    
+
             # Trying to extract workspace if possible
             if workspace_found: img_workspace = extract_img_workspace(img_undistort, workspace_ratio=workspace_ratio)
             else: img_workspace = None
-    
+
             # - Display
             # Concatenating raw image and undistorted image
             concat_ims = concat_imgs((img_raw, img_undistort))
-    
+
             # Concatenating extracted workspace with markers annotation
             if img_workspace is not None: res_img_markers = concat_imgs((res_img_markers, resize_img(img_workspace, height=res_img_markers.shape[0])))
-    
+
             # Showing images
             # show_img("Images raw & undistorted", concat_ims, wait_ms=0)
-            
+
             return img_workspace, res_img_markers
 
     def select_and_pick(client,tab_pose):
         global kill
         global execute
         global capture
-        
+
         while True:
             img_workspace, res_img_markers = stream_init(client, observation_pose_dwks)
-            
+
             if img_workspace is not None:
                 line_img =resize_img(img_workspace, height=res_img_markers.shape[0])
-               
+
                 break
             else:
                 line_img=None
-    
-    
+
+
         POI = line_inter(line_img,400-sensibilite,space_lines/100,space_point) #Points Of Interest
  #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
         regionSize = 30
-    
+
         show_img('Workspace', line_img, wait_ms=10)
-        cv2.setMouseCallback('Workspace', selectRectCallback, param=[POI, POISelected, regionSize]) 
+        cv2.setMouseCallback('Workspace', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = line_img.copy()
-        
+
         lock.lockForRead()
         capt = capture
         not_quit_n_not_exec = not(kill) and not(execute)
         lock.unlock()
-        
+
         continue_capture = True
-        
+
         print(POI)
         while not_quit_n_not_exec:
-        
-            # draw region of interest rectangles 
-            for point in POI: 
+            #texte
+            bottomLeftCornerOfText = (10,30)
+            if (len(tab_pose)>len(POISelected)) :
+                cv2.putText(line_img,'Encore '+ str(len(tab_pose)-len(POISelected))+ ' a selectionner', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
+            elif (len(tab_pose)<len(POISelected)) :
+                cv2.putText(line_img,str(len(POISelected)-len(tab_pose))+' points selectionne en trop !', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
+            else :
+                cv2.putText(line_img,'ok', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2)
+            #fin texte
+
+            # draw region of interest rectangles
+            for point in POI:
                 point=tuple(point)
                 if point in POISelected: drawSelected(line_img, point, regionSize, POISelected.index(point))
                 else: drawUnselected(line_img,point,regionSize)
-            
+
             key = show_img('Workspace', line_img)
             line_img = imgCached.copy()
-            
+
             # if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
             #     break
             lock.lockForRead()
             not_quit_n_not_exec = not(kill) and not(execute)
-            
+
             capt = capture
             lock.unlock()
-            if capt : 
+            if capt :
                 mlock.lock()
                 capture = False
                 mlock.unlock()
@@ -154,23 +163,23 @@ def select_and_pick2(client):
                 return continue_capture
             else:
                 continue_capture = False
-            
+
         # # PICK FROM POISelected
         pick_from_POIselected(POISelected,tab_pose)
-        
+
         return continue_capture
-    
+
     def pick_from_POIselected(POISelected, tab_pose):
         if len(POISelected) > len(tab_pose):
             print("Point de placement supérieur au nombre d'objet")
-            
+
         else:
             cpt=0
             for point in POISelected:
                 point=tuple(point)
                 inter_1_x, inter_1_y= change_space(point[1],point[0],0.01,0) #revoir les offsets ?
                 place_pose_object = PoseObject(x=inter_1_x, y=inter_1_y, z=0.135,roll=-2.70, pitch=1.57, yaw=-2.7)
-                
+
                 try:
                     if(tab_pose[cpt][0].z < 0.12):
                         print(tab_pose[cpt][0])
@@ -183,87 +192,87 @@ def select_and_pick2(client):
                     break
                 client.place_from_pose(*place_pose_object.to_list())
                 cpt+=1
-    
+
     def find_target(niryo_one_client, image):
-    
+
         tab_pose_bc, bc = get_obj_pose(niryo_one_client, wkshop, image)
-        
-        
+
+
         POI = bc #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
         regionSize = 30
-    
+
         show_img('Actu', image, wait_ms=10)
-        cv2.setMouseCallback('Actu', selectRectCallback, param=[POI, POISelected, regionSize]) 
+        cv2.setMouseCallback('Actu', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = image.copy()
-    
+
         while True:
-            # draw region of interest rectangles 
-            for point in POI: 
+            # draw region of interest rectangles
+            for point in POI:
                 point=tuple(point)
-                if point in POISelected: 
+                if point in POISelected:
                     drawSelected(image, point, regionSize, POISelected.index(point))
-                else: 
+                else:
                     drawUnselected(image,point,regionSize)
-            
+
             key = show_img('Actu', image)
             image = imgCached.copy()
-    
+
             if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
                 break
-        
+
         tab_pose=[]
         for obj_selected in POISelected:
             if obj_selected in bc:
                 tab_pose.append(tab_pose_bc[bc.index(obj_selected)][0])
-        
+
         return tab_pose, len(POISelected)
-        
-        
-            
-    
+
+
+
+
     def workshop_stream(niryo_one_client):
         # Getting calibration param
         while True:
-            
+
             img_workspace, res_img_markers = stream_init(niryo_one_client, observation_pose_wkshop, 1.5)
             # On recherche les cibles à déplacer
             if img_workspace is not None:
                 sleep(1)
                 tab_pose, nb_obj_selected = find_target(niryo_one_client, resize_img(img_workspace, height=res_img_markers.shape[0]))
                 return tab_pose, nb_obj_selected
-      
-            
-      
-    
+
+
+
+
     def main_select_pick2(client):
         nb_obj_select = -1
         lg_tab_pose=0
         while nb_obj_select != lg_tab_pose:
-            
+
             tab_pose, nb_obj_select = workshop_stream(client)
             lg_tab_pose = len(tab_pose)
-            
+
             continue_capture = True
-            while continue_capture:              
+            while continue_capture:
                 continue_capture = select_and_pick(client,tab_pose)
-            
-            
+
+
             if nb_obj_select != lg_tab_pose:
                 ans = input("Shop is not empty, do you want to pick other object ? (y/n)")
                 if ans=='n':
                     break
             else:
                 break
-                
-        cv.destroyAllWindows()        
+
+        cv.destroyAllWindows()
         client.move_joints(*sleep_joints)
         client.set_learning_mode(True)
-        
+
     main_select_pick2(client)
-        
-    
+
+
 
 def select_and_pick1(client):
     global sensibilite
@@ -277,11 +286,11 @@ def select_and_pick1(client):
                 #print("error with Niryo One's service")
                 logging.info("error with Niryo One's service")
                 return None
-                
+
             img_raw = uncompress_image(img_compressed) # Uncompressing image
             img_undistort = undistort_image(img_raw, mtx, dist) # Undistorting
             workspace_found, res_img_markers = debug_markers(img_undistort) # Trying to find markers
-            
+
 
             # Trying to extract workspace if possible
             if workspace_found: img_workspace = extract_img_workspace(img_undistort, workspace_ratio=1.0)
@@ -296,7 +305,7 @@ def select_and_pick1(client):
             if img_workspace is not None: res_img_markers = concat_imgs((res_img_markers, resize_img(img_workspace, height=res_img_markers.shape[0])))
 
 
-            # Showing images ajouter edge detection ? 
+            # Showing images ajouter edge detection ?
             #cv2.imshow("Images raw & undistorted", concat_ims)
 
             if img_workspace is not None:
@@ -305,11 +314,11 @@ def select_and_pick1(client):
             else:
                 line_img=None
 
-    def point_choice (line_img) : 
+    def point_choice (line_img) :
         global kill
         global execute
         global capture
-        
+
         logging.info(sensibilite)
         logging.info(space_lines/100)
         logging.info(space_point)
@@ -319,10 +328,10 @@ def select_and_pick1(client):
         logging.info(POI)
         POISelected = []
         clickCoord = [0, 0]
-        regionSize = 30 
+        regionSize = 30
 
         cv2.imshow('Workspace', line_img)
-        cv2.setMouseCallback('Workspace', selectRectCallback, param=[POI, POISelected, regionSize]) 
+        cv2.setMouseCallback('Workspace', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = line_img.copy()
 
         lock.lockForRead()
@@ -330,25 +339,25 @@ def select_and_pick1(client):
         not_quit_n_not_exec = not(kill) and not(execute)
         lock.unlock()
 
-        # while not_quit_n_not_exec  : 
+        # while not_quit_n_not_exec  :
         while not_quit_n_not_exec:
-            
-            # draw region of interest rectangles 
+
+            # draw region of interest rectangles
             for point in POI:
-                point=tuple(point) 
+                point=tuple(point)
                 if point in POISelected: drawSelected(line_img, point, regionSize, POISelected.index(point))
                 else: drawUnselected(line_img,point,regionSize)
-            
-            show_img('Workspace', line_img,10)  
+
+            show_img('Workspace', line_img,10)
             line_img = imgCached.copy()
             print(line_img.shape)
 
-            
+
             lock.lockForRead()
             not_quit_n_not_exec = not(kill) and not(execute)
             capt = capture
             lock.unlock()
-            if capt : 
+            if capt :
                 mlock.lock()
                 capture = False
                 mlock.unlock()
@@ -375,13 +384,13 @@ def select_and_pick1(client):
     continue_capture = True
 
     while continue_capture :
-        
+
         #capture picture
         line_img = capture_img(client,mtx,dist)
-        
+
         #choice of points with opencv
         POISelected,continue_capture = point_choice(line_img)
-    
+
 
     #set_action on POISelected
     set_action(POISelected)
@@ -393,7 +402,7 @@ def select_and_pick1(client):
 
 class Ui_MainWindow(object):
     ###################### AJOUT ! #################
-    # garder les lignes suivantes lors de la réécriture de l'interface ! 
+    # garder les lignes suivantes lors de la réécriture de l'interface !
     #connection de signauxmutex = QtCore.QMutex()
 
     ################################################
@@ -489,7 +498,7 @@ class Ui_MainWindow(object):
         self.espace_lignes_slider.sliderMoved['int'].connect(self.lcd_espace_lignes.display)
         self.espace_inter_slider.sliderMoved['int'].connect(self.lcd_espace_inter.display)
          ###################### AJOUT ! #################
-        # garder les lignes suivantes lors de la réécriture de l'interface ! 
+        # garder les lignes suivantes lors de la réécriture de l'interface !
 
         self.sensib_slider.sliderMoved['int'].connect(self.set_sensib)
         self.espace_lignes_slider.sliderMoved['int'].connect(self.set_space_lines)
@@ -504,15 +513,15 @@ class Ui_MainWindow(object):
         #connection de signaux
         #self.Quitter.clicked.connect()
         ###########################################"####"#
-        
+
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    
+
 
 
         ###################### AJOUT ! #################
         # garder les lignes suivantes lors de la réécriture de l'interface !
-        # # créatio thread  
+        # # créatio thread
         self.creat_n_run_thread()
         ################################################
 
@@ -532,7 +541,7 @@ class Ui_MainWindow(object):
         lock.lockForWrite()
         sensibilite=entier
         lock.unlock()
-    
+
     def set_space_lines(self,entier) :
         global space_lines
         lock.lockForWrite()
@@ -544,7 +553,7 @@ class Ui_MainWindow(object):
         lock.lockForWrite()
         space_point=entier
         lock.unlock()
-    
+
     def set_quit (self) :
         global kill
         lock.lockForWrite()
@@ -567,14 +576,14 @@ class Ui_MainWindow(object):
         self.thread = QThread()
         self.robot_opencv = robot_opencv()
         self.robot_opencv.moveToThread(self.thread)
-        
-        #connections 
+
+        #connections
         self.thread.started.connect(self.robot_opencv.run)
-        
+
         #start
         self.thread.start()
 
-              
+
 class robot_opencv(QObject):
 
     def run (self) :
@@ -592,7 +601,7 @@ class robot_opencv(QObject):
         try :
             # select_and_pick1(client)
             select_and_pick2(client)
-            
+
         except Exception as e:
             logging.info(traceback.format_exc())
             client.move_joints(*sleep_joints)
@@ -609,7 +618,3 @@ if __name__ == '__main__' :
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
-
-    
-    
-    
