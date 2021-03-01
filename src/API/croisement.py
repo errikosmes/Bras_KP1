@@ -323,7 +323,8 @@ def find_croisement(lines):
 # =============================================================================
 #     Trouve les croisements 
 # =============================================================================
-            
+    print(type_droite)
+
     if type_droite==0 :
         for i in range ( len(tab_of_types[1])  ):
             x0i= np.cos(tab_of_types[1][i][1]) * tab_of_types[1][i][0]
@@ -360,8 +361,7 @@ def find_croisement(lines):
                         inter_y = coef_dir_i * inter_x + ord_ori_i
                     
                         #on ne prends pas les points qui sont trop loins (intersection == nan)
-                        
-                        if (inter_x != np.nan) and (inter_y != np.nan ):
+                        if (not np.isnan(inter_x)) and (not np.isnan(inter_y)):
                             inter.append(   (round(inter_x), round(inter_y))   )
     else:
         print('erreur')

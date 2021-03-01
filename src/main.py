@@ -15,8 +15,8 @@ import sys
 import traceback
 
 sensibilite = 200
-space_lines = 0.1
-space_point = 5
+space_lines = 0
+space_point = 0
 kill = False
 execute = False
 capture = False
@@ -110,7 +110,7 @@ def select_and_pick2(client):
                 line_img=None
     
     
-        POI = line_inter(line_img,sensibilite,space_lines/100,space_point) #Points Of Interest
+        POI = line_inter(line_img,400-sensibilite,space_lines/100,space_point) #Points Of Interest
  #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
@@ -127,6 +127,7 @@ def select_and_pick2(client):
         
         continue_capture = True
         
+        print(POI)
         while not_quit_n_not_exec:
         
             # draw region of interest rectangles 
@@ -425,7 +426,7 @@ class Ui_MainWindow(object):
         self.label_sensib.setObjectName("label_sensib")
         self.espace_lignes_slider = QtWidgets.QSlider(self.centralwidget)
         self.espace_lignes_slider.setGeometry(QtCore.QRect(20, 120, 361, 16))
-        self.espace_lignes_slider.setMaximum(10)
+        self.espace_lignes_slider.setMaximum(20)
         self.espace_lignes_slider.setProperty("value", space_lines)
         self.espace_lignes_slider.setOrientation(QtCore.Qt.Horizontal)
         self.espace_lignes_slider.setObjectName("espace_lignes_slider")
@@ -439,7 +440,7 @@ class Ui_MainWindow(object):
         self.label_espace_ligne.setObjectName("label_espace_ligne")
         self.espace_inter_slider = QtWidgets.QSlider(self.centralwidget)
         self.espace_inter_slider.setGeometry(QtCore.QRect(20, 180, 361, 16))
-        self.espace_inter_slider.setMaximum(10)
+        self.espace_inter_slider.setMaximum(20)
         self.espace_inter_slider.setProperty("value", space_point)
         self.espace_inter_slider.setOrientation(QtCore.Qt.Horizontal)
         self.espace_inter_slider.setObjectName("espace_inter_slider")

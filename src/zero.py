@@ -7,8 +7,8 @@ from time import sleep
 import time
 
 # Set robot address
-#robot_ip_address = "10.10.10.10"
-robot_ip_address = "169.254.200.200"
+robot_ip_address = "10.10.10.10"
+#robot_ip_address = "169.254.200.200"
 
 client = NiryoOneClient()
 client.connect(robot_ip_address)
