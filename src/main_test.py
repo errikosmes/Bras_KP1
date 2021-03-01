@@ -185,8 +185,7 @@ def select_and_pick2(client):
     
     def find_target(niryo_one_client, image):
     
-        nb = int(input("Objects number ?"))    
-        tab_pose_bc, bc = get_obj_pose(niryo_one_client, wkshop, image, nb_objet=nb)
+        tab_pose_bc, bc = get_obj_pose(niryo_one_client, wkshop, image)
         
         
         POI = bc #Points Of Interest
@@ -202,8 +201,10 @@ def select_and_pick2(client):
             # draw region of interest rectangles 
             for point in POI: 
                 point=tuple(point)
-                if point in POISelected: drawSelected(image, point, regionSize, POISelected.index(point))
-                else: drawUnselected(image,point,regionSize)
+                if point in POISelected: 
+                    drawSelected(image, point, regionSize, POISelected.index(point))
+                else: 
+                    drawUnselected(image,point,regionSize)
             
             key = show_img('Actu', image)
             image = imgCached.copy()
@@ -216,7 +217,7 @@ def select_and_pick2(client):
             if obj_selected in bc:
                 tab_pose.append(tab_pose_bc[bc.index(obj_selected)][0])
         
-        return tab_pose, nb
+        return tab_pose, len(POISelected)
         
         
             
@@ -229,8 +230,8 @@ def select_and_pick2(client):
             # On recherche les cibles à déplacer
             if img_workspace is not None:
                 sleep(1)
-                tab_pose,nb = find_target(niryo_one_client, resize_img(img_workspace, height=res_img_markers.shape[0]))
-                return tab_pose,nb
+                tab_pose, nb_obj_selected = find_target(niryo_one_client, resize_img(img_workspace, height=res_img_markers.shape[0]))
+                return tab_pose, nb_obj_selected
       
             
       
@@ -246,7 +247,8 @@ def select_and_pick2(client):
             continue_capture = True
             while continue_capture:              
                 continue_capture = select_and_pick(client,tab_pose)
-                
+            
+            
             if nb_obj_select != lg_tab_pose:
                 ans = input("Shop is not empty, do you want to pick other object ? (y/n)")
                 if ans=='n':

@@ -361,8 +361,7 @@ def find_croisement(lines):
                     
                         #on ne prends pas les points qui sont trop loins (intersection == nan)
                         
-                        if (inter_x != np.nan) and (inter_y != np.nan ) :
-                            print(inter_x, inter_y)
+                        if (inter_x != np.nan) and (inter_y != np.nan ):
                             inter.append(   (round(inter_x), round(inter_y))   )
     else:
         print('erreur')
