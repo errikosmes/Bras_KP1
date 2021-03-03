@@ -323,7 +323,7 @@ def find_croisement(lines):
 # =============================================================================
 #     Trouve les croisements 
 # =============================================================================
-    print(type_droite)
+    #print(type_droite)
 
     if type_droite==0 :
         for i in range ( len(tab_of_types[1])  ):

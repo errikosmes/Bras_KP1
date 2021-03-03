@@ -15,8 +15,8 @@ import sys
 import traceback
 
 sensibilite = 200
-space_lines = 0
-space_point = 0
+space_lines = 5
+space_point = 5
 kill = False
 execute = False
 capture = False
@@ -126,8 +126,7 @@ def select_and_pick2(client):
         lock.unlock()
         
         continue_capture = True
-        
-        print(POI)
+    
         while not_quit_n_not_exec:
         
             # draw region of interest rectangles 
@@ -173,7 +172,7 @@ def select_and_pick2(client):
                 
                 try:
                     if(tab_pose[cpt][0].z < 0.12):
-                        print(tab_pose[cpt][0])
+                        #print(tab_pose[cpt][0])
                         print('ATTENTION Z très petit !!!!!!')
                         break
                     client.pick_from_pose(*tab_pose[cpt][0].to_list()) # pick from workshop
@@ -194,8 +193,8 @@ def select_and_pick2(client):
         clickCoord = [0, 0]
         regionSize = 30
     
-        show_img('Actu', image, wait_ms=10)
-        cv2.setMouseCallback('Actu', selectRectCallback, param=[POI, POISelected, regionSize]) 
+        show_img('Workspace 2', image, wait_ms=10)
+        cv2.setMouseCallback('Workspace 2', selectRectCallback, param=[POI, POISelected, regionSize]) 
         imgCached = image.copy()
     
         while True:
@@ -207,7 +206,7 @@ def select_and_pick2(client):
                 else: 
                     drawUnselected(image,point,regionSize)
             
-            key = show_img('Actu', image)
+            key = show_img('Workspace 2', image)
             image = imgCached.copy()
     
             if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
@@ -341,7 +340,7 @@ def select_and_pick1(client):
             
             show_img('Workspace', line_img,10)  
             line_img = imgCached.copy()
-            print(line_img.shape)
+            #print(line_img.shape)
 
             
             lock.lockForRead()
