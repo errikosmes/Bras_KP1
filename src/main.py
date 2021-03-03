@@ -1,5 +1,5 @@
 # Imports
-import logging
+import logging, sys, traceback
 from niryo_one_tcp_client import *
 from niryo_one_camera import *
 import cv2 as cv
@@ -11,8 +11,6 @@ from API.workspace_referential import *
 from API.workshop_processing import *
 from PyQt5.QtCore import QMutex, QObject, QThread, pyqtSignal, QReadWriteLock
 from PyQt5 import QtCore, QtGui, QtWidgets
-import sys
-import traceback
 
 sensibilite = 200
 space_lines = 5
@@ -54,7 +52,7 @@ observation_pose_dwks = PoseObject(
 sleep_joints = [-1.6, 0.152, -1.3, 0.1, 0.01, 0.04]
 
 
-def select_and_pick2(client):
+def main_thread(client):
     global sensibilite
     global space_lines
     global space_point
@@ -469,7 +467,7 @@ class robot_opencv(QObject):
         client.change_tool(tool_used)
         #programme principal
         try :
-            select_and_pick2(client)
+            main_thread(client)
 
         except Exception as e:
             logging.info(traceback.format_exc())
