@@ -18,6 +18,7 @@ space_point = 5
 kill = False
 execute = False
 capture = False
+client = None
 
 lock = QReadWriteLock()
 mlock = QMutex()
@@ -124,7 +125,7 @@ def main_thread(client):
         lock.unlock()
 
         continue_capture = True
-    
+
         while not_quit_n_not_exec:
             #texte
             bottomLeftCornerOfText = (10,30)
@@ -198,9 +199,9 @@ def main_thread(client):
         POISelected = []
         clickCoord = [0, 0]
         regionSize = 30
-    
+
         show_img('Workspace 2', image, wait_ms=10)
-        cv2.setMouseCallback('Workspace 2', selectRectCallback, param=[POI, POISelected, regionSize]) 
+        cv2.setMouseCallback('Workspace 2', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = image.copy()
 
         while True:
@@ -211,7 +212,7 @@ def main_thread(client):
                     drawSelected(image, point, regionSize, POISelected.index(point))
                 else:
                     drawUnselected(image,point,regionSize)
-            
+
             key = show_img('Workspace 2', image)
             image = imgCached.copy()
 
@@ -275,6 +276,11 @@ class Ui_MainWindow(object):
 
     ################################################
     def setupUi(self, MainWindow):
+
+        ######### à garder  #############
+        app.aboutToQuit.connect(self.closeEvent) #connect le bouton X à "closeEvent"
+        #################################
+
         self.mutex = QMutex()
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(421, 800)
@@ -399,6 +405,15 @@ class Ui_MainWindow(object):
         self.label_espace_inter.setText(_translate("MainWindow", "Espacement minimum entre  deux intersections"))
         self.Quitter.setText(_translate("MainWindow", "Quitter"))
 
+    def closeEvent(self) :
+        ''' call when the X button is clicked '''
+        global client
+        if (client == None) : # if the client is not define
+            return
+        else :
+            client.move_joints(*sleep_joints)
+            client.set_learning_mode(True)
+
     def set_sensib(self,entier) :
         global sensibilite
         lock.lockForWrite()
@@ -451,7 +466,7 @@ class robot_opencv(QObject):
 
     def run (self) :
         """ tache du robot et opencv """
-        #signaux à ajouter
+        global client
 
 
         # Connect to robot
