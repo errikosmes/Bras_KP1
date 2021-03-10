@@ -295,9 +295,6 @@ class Ui_MainWindow(object):
         self.Capture = QtWidgets.QPushButton(self.centralwidget)
         self.Capture.setGeometry(QtCore.QRect(160, 390, 89, 25))
         self.Capture.setObjectName("Capture")
-        self.Executer = QtWidgets.QPushButton(self.centralwidget)
-        self.Executer.setGeometry(QtCore.QRect(160, 430, 91, 41))
-        self.Executer.setObjectName("Executer")
         self.label_sensib = QtWidgets.QLabel(self.centralwidget)
         self.label_sensib.setGeometry(QtCore.QRect(70, 30, 71, 17))
         self.label_sensib.setObjectName("label_sensib")
@@ -372,7 +369,6 @@ class Ui_MainWindow(object):
         self.espace_lignes_slider.sliderMoved['int'].connect(self.set_space_lines)
         self.espace_inter_slider.sliderMoved['int'].connect(self.set_space_point)
         self.Quitter.clicked.connect(self.set_quit)
-        self.Executer.clicked.connect(self.set_execute)
         self.Capture.clicked.connect(self.set_capture)
 
 
@@ -398,7 +394,6 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.Capture.setText(_translate("MainWindow", "Capture"))
-        self.Executer.setText(_translate("MainWindow", "Exécuter"))
         self.label_sensib.setText(_translate("MainWindow", "Sensibilité"))
         self.label_espace_ligne.setText(_translate("MainWindow", "Espace entre deux lignes"))
         self.label_espace_inter.setText(_translate("MainWindow", "Espacement minimum entre  deux intersections"))
