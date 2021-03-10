@@ -15,7 +15,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 sensibilite = 200
 space_lines = 5
 space_point = 5
-kill = False
 execute = False
 capture = False
 client = None
@@ -94,7 +93,6 @@ def main_thread(client):
             return img_workspace, res_img_markers
 
     def select_and_pick(client,tab_pose):
-        global kill
         global execute
         global capture
 
@@ -121,7 +119,7 @@ def main_thread(client):
 
         lock.lockForRead()
         capt = capture
-        not_quit_n_not_exec = not(kill) and not(execute)
+        not_quit_n_not_exec =  not(execute)
         lock.unlock()
 
         continue_capture = True
@@ -149,7 +147,7 @@ def main_thread(client):
             if ((key in [27, ord('\n'), ord('\r'), ord("q")]) and (len(tab_pose) is len(POISelected))):  # Will break loop if the user press Escape or Q
                 break
             lock.lockForRead()
-            not_quit_n_not_exec = not(kill) and not(execute)
+            not_quit_n_not_exec =  not(execute)
 
             capt = capture
             lock.unlock()
@@ -283,7 +281,7 @@ class Ui_MainWindow(object):
 
         self.mutex = QMutex()
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(421, 800)
+        MainWindow.resize(421, 400)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.sensib_slider = QtWidgets.QSlider(self.centralwidget)
@@ -293,16 +291,17 @@ class Ui_MainWindow(object):
         self.sensib_slider.setOrientation(QtCore.Qt.Horizontal)
         self.sensib_slider.setObjectName("sensib_slider")
         self.lcd_sensib = QtWidgets.QLCDNumber(self.centralwidget)
-        self.lcd_sensib.setGeometry(QtCore.QRect(230, 30, 64, 23))
+        self.lcd_sensib.setGeometry(QtCore.QRect(315, 30, 64, 23))
         self.lcd_sensib.setSmallDecimalPoint(False)
         self.lcd_sensib.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
         self.lcd_sensib.setProperty("value", sensibilite)
         self.lcd_sensib.setObjectName("lcd_sensib")
         self.Capture = QtWidgets.QPushButton(self.centralwidget)
-        self.Capture.setGeometry(QtCore.QRect(160, 390, 89, 25))
+        self.Capture.setGeometry(QtCore.QRect(160, 290, 100, 35))
         self.Capture.setObjectName("Capture")
         self.label_sensib = QtWidgets.QLabel(self.centralwidget)
-        self.label_sensib.setGeometry(QtCore.QRect(70, 30, 71, 17))
+        #self.label_sensib.setGeometry(QtCore.QRect(70, 30, 71, 17))
+        self.label_sensib.setGeometry(QtCore.QRect(20, 30, 71, 17))
         self.label_sensib.setObjectName("label_sensib")
         self.espace_lignes_slider = QtWidgets.QSlider(self.centralwidget)
         self.espace_lignes_slider.setGeometry(QtCore.QRect(20, 120, 361, 16))
@@ -311,12 +310,12 @@ class Ui_MainWindow(object):
         self.espace_lignes_slider.setOrientation(QtCore.Qt.Horizontal)
         self.espace_lignes_slider.setObjectName("espace_lignes_slider")
         self.lcd_espace_lignes = QtWidgets.QLCDNumber(self.centralwidget)
-        self.lcd_espace_lignes.setGeometry(QtCore.QRect(230, 90, 64, 23))
+        self.lcd_espace_lignes.setGeometry(QtCore.QRect(315, 90, 64, 23))
         self.lcd_espace_lignes.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
         self.lcd_espace_lignes.setProperty("value", space_lines)
         self.lcd_espace_lignes.setObjectName("lcd_espace_lignes")
         self.label_espace_ligne = QtWidgets.QLabel(self.centralwidget)
-        self.label_espace_ligne.setGeometry(QtCore.QRect(40, 90, 181, 20))
+        self.label_espace_ligne.setGeometry(QtCore.QRect(20, 90, 181, 20))
         self.label_espace_ligne.setObjectName("label_espace_ligne")
         self.espace_inter_slider = QtWidgets.QSlider(self.centralwidget)
         self.espace_inter_slider.setGeometry(QtCore.QRect(20, 180, 361, 16))
@@ -325,15 +324,13 @@ class Ui_MainWindow(object):
         self.espace_inter_slider.setOrientation(QtCore.Qt.Horizontal)
         self.espace_inter_slider.setObjectName("espace_inter_slider")
         self.label_espace_inter = QtWidgets.QLabel(self.centralwidget)
-        self.label_espace_inter.setGeometry(QtCore.QRect(10, 140, 331, 31))
+        self.label_espace_inter.setGeometry(QtCore.QRect(20, 140, 331, 31))
         self.label_espace_inter.setObjectName("label_espace_inter")
         self.lcd_espace_inter = QtWidgets.QLCDNumber(self.centralwidget)
-        self.lcd_espace_inter.setGeometry(QtCore.QRect(340, 140, 64, 23))
+        self.lcd_espace_inter.setGeometry(QtCore.QRect(315, 140, 64, 23))
         self.lcd_espace_inter.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
         self.lcd_espace_inter.setProperty("value", space_point)
         self.lcd_espace_inter.setObjectName("lcd_espace_inter")
-        self.Quitter = QtWidgets.QPushButton(self.centralwidget)
-        self.Quitter.setGeometry(QtCore.QRect(140, 500, 141, 51))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -353,8 +350,6 @@ class Ui_MainWindow(object):
         brush = QtGui.QBrush(QtGui.QColor(204, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
-        self.Quitter.setPalette(palette)
-        self.Quitter.setObjectName("Quitter")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 421, 22))
@@ -374,14 +369,12 @@ class Ui_MainWindow(object):
         self.sensib_slider.sliderMoved['int'].connect(self.set_sensib)
         self.espace_lignes_slider.sliderMoved['int'].connect(self.set_space_lines)
         self.espace_inter_slider.sliderMoved['int'].connect(self.set_space_point)
-        self.Quitter.clicked.connect(self.set_quit)
         self.Capture.clicked.connect(self.set_capture)
 
 
 
 
         #connection de signaux
-        #self.Quitter.clicked.connect()
         ###########################################"####"#
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -402,8 +395,7 @@ class Ui_MainWindow(object):
         self.Capture.setText(_translate("MainWindow", "Capture"))
         self.label_sensib.setText(_translate("MainWindow", "Sensibilité"))
         self.label_espace_ligne.setText(_translate("MainWindow", "Espace entre deux lignes"))
-        self.label_espace_inter.setText(_translate("MainWindow", "Espacement minimum entre  deux intersections"))
-        self.Quitter.setText(_translate("MainWindow", "Quitter"))
+        self.label_espace_inter.setText(_translate("MainWindow", "Espacement minimum entre deux intersections"))
 
     def closeEvent(self) :
         ''' call when the X button is clicked '''
@@ -430,12 +422,6 @@ class Ui_MainWindow(object):
         global space_point
         lock.lockForWrite()
         space_point=entier
-        lock.unlock()
-
-    def set_quit (self) :
-        global kill
-        lock.lockForWrite()
-        kill=True
         lock.unlock()
 
     def set_execute (self) :
@@ -485,8 +471,11 @@ class robot_opencv(QObject):
             client.set_learning_mode(True)
             logging.info("erreur")
 
+        client.move_joints(*sleep_joints)
+        client.set_learning_mode(True)
         # Releasing connection
         client.quit()
+        client = None
 
 if __name__ == '__main__' :
     app = QtWidgets.QApplication(sys.argv)
