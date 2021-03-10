@@ -92,7 +92,7 @@ def main_thread(client):
 
             return img_workspace, res_img_markers
 
-    def select_and_pick(client,tab_pose):
+    def select_and_pick(client,tab_pose) :
         global execute
         global capture
 
@@ -189,9 +189,10 @@ def main_thread(client):
                 cpt+=1
 
     def find_target(niryo_one_client, image):
+        '''renvoie False False si le bouton "Capture a été actionné'''
+        global capture
 
         tab_pose_bc, bc = get_obj_pose(niryo_one_client, wkshop, image)
-
 
         POI = bc #Points Of Interest
         POISelected = []
@@ -214,6 +215,16 @@ def main_thread(client):
             key = show_img('Workspace 2', image)
             image = imgCached.copy()
 
+            lock.lockForRead()
+            capt = capture
+            lock.unlock()
+
+            if capt :
+                mlock.lock()
+                capture = False
+                mlock.unlock()
+                return False, False
+
             if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
                 break
 
@@ -224,24 +235,25 @@ def main_thread(client):
 
         return tab_pose, len(POISelected)
 
-
-
-
     def workshop_stream(niryo_one_client):
-        # Getting calibration param
-        while True:
+        global capture
+        #mise a zéro du bouton Capture :
+        mlock.lock()
+        capture = False
+        mlock.unlock()
 
+        while True:
             img_workspace, res_img_markers = stream_init(niryo_one_client, observation_pose_wkshop, 1.5)
             # On recherche les cibles à déplacer
             if img_workspace is not None:
                 sleep(1)
                 tab_pose, nb_obj_selected = find_target(niryo_one_client, resize_img(img_workspace, height=res_img_markers.shape[0]))
+                if tab_pose == False and nb_obj_selected == False :
+                    continue #reboucle car le bouton Capture a été actionné
                 return tab_pose, nb_obj_selected
 
-
-
-
     def main_select_pick2(client):
+        global capture
         nb_obj_select = -1
         lg_tab_pose=0
         while nb_obj_select != lg_tab_pose:
@@ -249,6 +261,12 @@ def main_thread(client):
             tab_pose, nb_obj_select = workshop_stream(client)
             lg_tab_pose = len(tab_pose)
 
+
+
+            #mise a zéro du bouton Capture :
+            mlock.lock()
+            capture = False
+            mlock.unlock()
             continue_capture = True
             while continue_capture:
                 continue_capture = select_and_pick(client,tab_pose)
