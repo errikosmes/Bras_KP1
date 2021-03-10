@@ -286,18 +286,14 @@ def main_thread(client):
     main_select_pick2(client)
 
 class Ui_MainWindow(object):
-    ###################### AJOUT ! #################
-    # garder les lignes suivantes lors de la réécriture de l'interface !
-    #connection de signauxmutex = QtCore.QMutex()
-
-    ################################################
+    
     def setupUi(self, MainWindow):
 
-        ######### à garder  #############
+        ###################### AJOUT ! ######################
+        # garder les lignes suivantes lors de la réécriture de l'interface !
         app.aboutToQuit.connect(self.closeEvent) #connect le bouton X à "closeEvent"
-        #################################
+        #####################################################
 
-        self.mutex = QMutex()
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(421, 400)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -400,11 +396,11 @@ class Ui_MainWindow(object):
 
 
 
-        ###################### AJOUT ! #################
+        ###################### AJOUT ! ######################
         # garder les lignes suivantes lors de la réécriture de l'interface !
-        # # créatio thread
+        # # création thread
         self.creat_n_run_thread()
-        ################################################
+        ####################################################
 
 
     def retranslateUi(self, MainWindow):
