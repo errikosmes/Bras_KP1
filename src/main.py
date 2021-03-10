@@ -145,7 +145,7 @@ def main_thread(client):
             key = show_img('Workspace', line_img)
             line_img = imgCached.copy()
 
-            if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
+            if ((key in [27, ord('\n'), ord('\r'), ord("q")]) and (len(tab_pose) is len(POISelected))):  # Will break loop if the user press Escape or Q
                 break
             lock.lockForRead()
             not_quit_n_not_exec = not(kill) and not(execute)
