@@ -38,8 +38,8 @@ dwks = "default_workspace"  # Robot's placing Workspace Name
 
 # POS observation workshop
 observation_pose_wkshop = PoseObject(
-    x=-0.00, y=-0.17, z=0.28,
-    roll=0.998, pitch=1.41, yaw=-0.76,
+    x=-0.00, y=-0.21, z=0.24,
+    roll=1.47, pitch=1.46, yaw=-0.22,
 )
 
 # POS observation Packing AREA
@@ -101,7 +101,7 @@ def main_thread(client):
             img_workspace, res_img_markers = stream_init(client, observation_pose_dwks)
 
             if img_workspace is not None:
-                line_img =resize_img(img_workspace, height=res_img_markers.shape[0])
+                line_img = resize_img(img_workspace, height=res_img_markers.shape[0])
 
                 break
             else:
