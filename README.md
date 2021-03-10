@@ -16,9 +16,9 @@ Le but de ce projet est de créer une interface pour de futurs utilisateurs qui 
 ### Backend
 - [x] Récupérer la vidéo du robot
 - [x] Repérer les croisements ( perpendiculaires )
-- [ ] Détecter des croisements obliques
+- [x] Détecter des croisements obliques
 - [x] Récupérer les coordonnées d'un point
-- [ ] Se déplacer au croisement
-- [ ] Créer un " Workspace " pour le robot
+- [x] Se déplacer au croisement
+- [x] Créer un " Workspace " pour le robot
 
 
