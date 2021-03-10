@@ -24,6 +24,7 @@ mlock = QMutex()
 
 # Inits
 # Set robot address
+#robot_ip_address = None
 robot_ip_address = "10.10.10.10"
 # robot_ip_address = "169.254.200.200"
 
@@ -56,6 +57,7 @@ def main_thread(client):
     global sensibilite
     global space_lines
     global space_point
+    global robot_ip_address
 
     def stream_init(client, observation_pose, workspace_ratio=1.0):
 
@@ -286,7 +288,7 @@ def main_thread(client):
     main_select_pick2(client)
 
 class Ui_MainWindow(object):
-    
+
     def setupUi(self, MainWindow):
 
         ###################### AJOUT ! ######################
@@ -311,7 +313,7 @@ class Ui_MainWindow(object):
         self.lcd_sensib.setProperty("value", sensibilite)
         self.lcd_sensib.setObjectName("lcd_sensib")
         self.Capture = QtWidgets.QPushButton(self.centralwidget)
-        self.Capture.setGeometry(QtCore.QRect(160, 290, 100, 35))
+        self.Capture.setGeometry(QtCore.QRect(160, 210, 100, 35))
         self.Capture.setObjectName("Capture")
         self.label_sensib = QtWidgets.QLabel(self.centralwidget)
         #self.label_sensib.setGeometry(QtCore.QRect(70, 30, 71, 17))
@@ -364,6 +366,18 @@ class Ui_MainWindow(object):
         brush = QtGui.QBrush(QtGui.QColor(204, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
+
+        #IP part
+        self.lineEdit_ip = QtWidgets.QLineEdit(self.centralwidget)
+        self.lineEdit_ip.setGeometry(QtCore.QRect(150, 270, 161, 25))
+        self.lineEdit_ip.setObjectName("lineEdit_ip")
+        self.label_adresse_ip = QtWidgets.QLabel(self.centralwidget)
+        self.label_adresse_ip.setGeometry(QtCore.QRect(50, 270, 121, 31))
+        self.label_adresse_ip.setObjectName("label_adresse_ip")
+        self.connect_button = QtWidgets.QPushButton(self.centralwidget)
+        self.connect_button.setGeometry(QtCore.QRect(110, 320, 91, 41))
+        self.connect_button.setObjectName("connect_button")
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 421, 22))
@@ -385,22 +399,13 @@ class Ui_MainWindow(object):
         self.espace_inter_slider.sliderMoved['int'].connect(self.set_space_point)
         self.Capture.clicked.connect(self.set_capture)
 
-
-
+        #ip part
+        self.connect_button.clicked.connect(self.set_connection)
 
         #connection de signaux
         ###########################################"####"#
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-
-
-
-        ###################### AJOUT ! ######################
-        # garder les lignes suivantes lors de la réécriture de l'interface !
-        # # création thread
-        self.creat_n_run_thread()
-        ####################################################
 
 
     def retranslateUi(self, MainWindow):
@@ -410,6 +415,11 @@ class Ui_MainWindow(object):
         self.label_sensib.setText(_translate("MainWindow", "Sensibilité"))
         self.label_espace_ligne.setText(_translate("MainWindow", "Espace entre deux lignes"))
         self.label_espace_inter.setText(_translate("MainWindow", "Espacement minimum entre deux intersections"))
+
+        #IP part :
+        self.lineEdit_ip.setText(_translate("MainWindow", robot_ip_address))
+        self.label_adresse_ip.setText(_translate("MainWindow", "Adresse IP  : "))
+        self.connect_button.setText(_translate("MainWindow", "Connect"))
 
     def closeEvent(self) :
         ''' call when the X button is clicked '''
@@ -449,6 +459,12 @@ class Ui_MainWindow(object):
         mlock.lock()
         capture=True
         mlock.unlock()
+
+    def set_connection (self) :
+        global robot_ip_address
+        robot_ip_address = self.lineEdit_ip.text()
+        print (robot_ip_address)
+        self.creat_n_run_thread() #Élancement du thread
 
     def creat_n_run_thread(self) :
         self.thread = QThread()
