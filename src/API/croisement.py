@@ -270,20 +270,20 @@ def type_croisement(lines):
             #une erreur peut se glisser au dessus
     if len(droites) != 2:
         type_droite = 2
-        print("Plus de deux types droites")
+        #print("Plus de deux types droites")
 
     elif len(droites) == 0 or len(droites) == 1 :
         type_droite = -1
-        print('Une ou aucune droite')
+        #print('Une ou aucune droite')
     
     else:
         if ( droites[0] % (np.pi/2) >= - 0.1 ) and (droites[1] % (np.pi/2) >= - 0.1) and ( droites[0] % (np.pi/2) <= 0.1 ) and (droites[1] % (np.pi/2) <=  0.1):
             type_droite = 0
-            print('Droite horizontale et verticale')
+            #print('Droite horizontale et verticale')
             
         else:
             type_droite = 1
-            print('Droite ni horizontale ni verticale')
+            #print('Droite ni horizontale ni verticale')
     
     return(type_droite,droites)
 

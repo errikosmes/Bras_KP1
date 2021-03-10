@@ -69,7 +69,7 @@ def main_thread(client):
             # Getting image
             status, img_compressed = client.get_img_compressed()
             if status is not True:
-                print("error with Niryo One's service")
+                print("[ERROR] error with Niryo One's service")
                 break
 
             img_raw = uncompress_image(img_compressed) # Uncompressing image
@@ -168,7 +168,7 @@ def main_thread(client):
 
     def pick_from_POIselected(POISelected, tab_pose):
         if len(POISelected) > len(tab_pose):
-            print("Point de placement supérieur au nombre d'objet")
+            print("[ERROR] Point de placement supérieur au nombre d'objet")
 
         else:
             cpt=0
@@ -179,12 +179,12 @@ def main_thread(client):
                 try:
                     if(tab_pose[cpt][0].z < 0.12):
                         #print(tab_pose[cpt][0])
-                        print('ATTENTION Z très petit !!!!!!')
+                        print('[ERROR] ATTENTION z is to small!')
                         break
                     client.pick_from_pose(*tab_pose[cpt][0].to_list()) # pick from workshop
                 except:
                     print(traceback.format_exc())
-                    print('More objects selected than placement selected')
+                    print('[ERROR] More objects selected than placement selected')
                     break
                 client.place_from_pose(*place_pose_object.to_list())
                 cpt+=1
