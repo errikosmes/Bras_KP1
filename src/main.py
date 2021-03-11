@@ -301,52 +301,72 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.sensib_slider = QtWidgets.QSlider(self.centralwidget)
+        self.sensib_slider.setEnabled(False)
         self.sensib_slider.setGeometry(QtCore.QRect(20, 60, 361, 16))
         self.sensib_slider.setMaximum(400)
         self.sensib_slider.setProperty("value", sensibilite)
         self.sensib_slider.setOrientation(QtCore.Qt.Horizontal)
         self.sensib_slider.setObjectName("sensib_slider")
+
         self.lcd_sensib = QtWidgets.QLCDNumber(self.centralwidget)
+        self.lcd_sensib.setEnabled(False)
         self.lcd_sensib.setGeometry(QtCore.QRect(315, 30, 64, 23))
         self.lcd_sensib.setSmallDecimalPoint(False)
         self.lcd_sensib.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
         self.lcd_sensib.setProperty("value", sensibilite)
         self.lcd_sensib.setObjectName("lcd_sensib")
+
         self.Capture = QtWidgets.QPushButton(self.centralwidget)
+        self.Capture.setEnabled(False)
         self.Capture.setGeometry(QtCore.QRect(160, 210, 100, 35))
         self.Capture.setObjectName("Capture")
+
         self.label_sensib = QtWidgets.QLabel(self.centralwidget)
+        self.label_sensib.setEnabled(False)
         #self.label_sensib.setGeometry(QtCore.QRect(70, 30, 71, 17))
         self.label_sensib.setGeometry(QtCore.QRect(20, 30, 71, 17))
         self.label_sensib.setObjectName("label_sensib")
+
         self.espace_lignes_slider = QtWidgets.QSlider(self.centralwidget)
+        self.espace_lignes_slider.setEnabled(False)
         self.espace_lignes_slider.setGeometry(QtCore.QRect(20, 120, 361, 16))
         self.espace_lignes_slider.setMaximum(20)
         self.espace_lignes_slider.setProperty("value", space_lines)
         self.espace_lignes_slider.setOrientation(QtCore.Qt.Horizontal)
         self.espace_lignes_slider.setObjectName("espace_lignes_slider")
+
         self.lcd_espace_lignes = QtWidgets.QLCDNumber(self.centralwidget)
+        self.lcd_espace_lignes.setEnabled(False)
         self.lcd_espace_lignes.setGeometry(QtCore.QRect(315, 90, 64, 23))
         self.lcd_espace_lignes.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
         self.lcd_espace_lignes.setProperty("value", space_lines)
         self.lcd_espace_lignes.setObjectName("lcd_espace_lignes")
+
         self.label_espace_ligne = QtWidgets.QLabel(self.centralwidget)
+        self.label_espace_ligne.setEnabled(False)
         self.label_espace_ligne.setGeometry(QtCore.QRect(20, 90, 181, 20))
         self.label_espace_ligne.setObjectName("label_espace_ligne")
+
         self.espace_inter_slider = QtWidgets.QSlider(self.centralwidget)
+        self.espace_inter_slider.setEnabled(False)
         self.espace_inter_slider.setGeometry(QtCore.QRect(20, 180, 361, 16))
         self.espace_inter_slider.setMaximum(20)
         self.espace_inter_slider.setProperty("value", space_point)
         self.espace_inter_slider.setOrientation(QtCore.Qt.Horizontal)
         self.espace_inter_slider.setObjectName("espace_inter_slider")
+
         self.label_espace_inter = QtWidgets.QLabel(self.centralwidget)
+        self.label_espace_inter.setEnabled(False)
         self.label_espace_inter.setGeometry(QtCore.QRect(20, 140, 331, 31))
         self.label_espace_inter.setObjectName("label_espace_inter")
+
         self.lcd_espace_inter = QtWidgets.QLCDNumber(self.centralwidget)
+        self.lcd_espace_inter.setEnabled(False)
         self.lcd_espace_inter.setGeometry(QtCore.QRect(315, 140, 64, 23))
         self.lcd_espace_inter.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
         self.lcd_espace_inter.setProperty("value", space_point)
         self.lcd_espace_inter.setObjectName("lcd_espace_inter")
+
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -371,9 +391,11 @@ class Ui_MainWindow(object):
         self.lineEdit_ip = QtWidgets.QLineEdit(self.centralwidget)
         self.lineEdit_ip.setGeometry(QtCore.QRect(150, 270, 161, 25))
         self.lineEdit_ip.setObjectName("lineEdit_ip")
+
         self.label_adresse_ip = QtWidgets.QLabel(self.centralwidget)
         self.label_adresse_ip.setGeometry(QtCore.QRect(50, 270, 121, 31))
         self.label_adresse_ip.setObjectName("label_adresse_ip")
+
         self.connect_button = QtWidgets.QPushButton(self.centralwidget)
         self.connect_button.setGeometry(QtCore.QRect(110, 320, 91, 41))
         self.connect_button.setObjectName("connect_button")
@@ -464,7 +486,29 @@ class Ui_MainWindow(object):
         global robot_ip_address
         robot_ip_address = self.lineEdit_ip.text()
         print (robot_ip_address)
-        self.creat_n_run_thread() #Élancement du thread
+        self.creat_n_run_thread() #lancement du thread
+        self.disableIp()
+        self.enableSlider()
+
+    def disableIp(self) :
+        self.lineEdit_ip.setEnabled(False)
+        self.label_adresse_ip.setEnabled(False)
+        self.connect_button.setEnabled(False)
+
+    def enableSlider(self) :
+        self.sensib_slider.setEnabled(True)
+        self.Capture.setEnabled(True)
+        self.lcd_sensib.setEnabled(True)
+        self.espace_lignes_slider.setEnabled(True)
+        self.label_sensib.setEnabled(True)
+        self.lcd_espace_inter.setEnabled(True)
+        self.label_espace_inter.setEnabled(True)
+        self.espace_inter_slider.setEnabled(True)
+        self.label_espace_ligne.setEnabled(True)
+        self.lcd_espace_lignes.setEnabled(True)
+        self.espace_lignes_slider.setEnabled(True)
+
+
 
     def creat_n_run_thread(self) :
         self.thread = QThread()
