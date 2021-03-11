@@ -15,15 +15,16 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 sensibilite = 200
 space_lines = 5
 space_point = 5
-kill = False
 execute = False
 capture = False
+client = None
 
 lock = QReadWriteLock()
 mlock = QMutex()
 
 # Inits
 # Set robot address
+#robot_ip_address = None
 robot_ip_address = "10.10.10.10"
 # robot_ip_address = "169.254.200.200"
 
@@ -56,6 +57,7 @@ def main_thread(client):
     global sensibilite
     global space_lines
     global space_point
+    global robot_ip_address
 
     def stream_init(client, observation_pose, workspace_ratio=1.0):
 
@@ -92,8 +94,7 @@ def main_thread(client):
 
             return img_workspace, res_img_markers
 
-    def select_and_pick(client,tab_pose):
-        global kill
+    def select_and_pick(client,tab_pose) :
         global execute
         global capture
 
@@ -120,11 +121,11 @@ def main_thread(client):
 
         lock.lockForRead()
         capt = capture
-        not_quit_n_not_exec = not(kill) and not(execute)
+        not_quit_n_not_exec =  not(execute)
         lock.unlock()
 
         continue_capture = True
-    
+
         while not_quit_n_not_exec:
             #texte
             bottomLeftCornerOfText = (10,30)
@@ -148,7 +149,7 @@ def main_thread(client):
             if ((key in [27, ord('\n'), ord('\r'), ord("q")]) and (len(tab_pose) is len(POISelected))):  # Will break loop if the user press Escape or Q
                 break
             lock.lockForRead()
-            not_quit_n_not_exec = not(kill) and not(execute)
+            not_quit_n_not_exec =  not(execute)
 
             capt = capture
             lock.unlock()
@@ -190,17 +191,18 @@ def main_thread(client):
                 cpt+=1
 
     def find_target(niryo_one_client, image):
+        '''renvoie False False si le bouton "Capture a été actionné'''
+        global capture
 
         tab_pose_bc, bc = get_obj_pose(niryo_one_client, wkshop, image)
-
 
         POI = bc #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
         regionSize = 30
-    
+
         show_img('Workspace 2', image, wait_ms=10)
-        cv2.setMouseCallback('Workspace 2', selectRectCallback, param=[POI, POISelected, regionSize]) 
+        cv2.setMouseCallback('Workspace 2', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = image.copy()
 
         while True:
@@ -211,9 +213,19 @@ def main_thread(client):
                     drawSelected(image, point, regionSize, POISelected.index(point))
                 else:
                     drawUnselected(image,point,regionSize)
-            
+
             key = show_img('Workspace 2', image)
             image = imgCached.copy()
+
+            lock.lockForRead()
+            capt = capture
+            lock.unlock()
+
+            if capt :
+                mlock.lock()
+                capture = False
+                mlock.unlock()
+                return False, False
 
             if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
                 break
@@ -225,24 +237,25 @@ def main_thread(client):
 
         return tab_pose, len(POISelected)
 
-
-
-
     def workshop_stream(niryo_one_client):
-        # Getting calibration param
-        while True:
+        global capture
+        #mise a zéro du bouton Capture :
+        mlock.lock()
+        capture = False
+        mlock.unlock()
 
+        while True:
             img_workspace, res_img_markers = stream_init(niryo_one_client, observation_pose_wkshop, 1.5)
             # On recherche les cibles à déplacer
             if img_workspace is not None:
                 sleep(1)
                 tab_pose, nb_obj_selected = find_target(niryo_one_client, resize_img(img_workspace, height=res_img_markers.shape[0]))
+                if tab_pose == False and nb_obj_selected == False :
+                    continue #reboucle car le bouton Capture a été actionné
                 return tab_pose, nb_obj_selected
 
-
-
-
     def main_select_pick2(client):
+        global capture
         nb_obj_select = -1
         lg_tab_pose=0
         while nb_obj_select != lg_tab_pose:
@@ -250,6 +263,12 @@ def main_thread(client):
             tab_pose, nb_obj_select = workshop_stream(client)
             lg_tab_pose = len(tab_pose)
 
+
+
+            #mise a zéro du bouton Capture :
+            mlock.lock()
+            capture = False
+            mlock.unlock()
             continue_capture = True
             while continue_capture:
                 continue_capture = select_and_pick(client,tab_pose)
@@ -269,65 +288,85 @@ def main_thread(client):
     main_select_pick2(client)
 
 class Ui_MainWindow(object):
-    ###################### AJOUT ! #################
-    # garder les lignes suivantes lors de la réécriture de l'interface !
-    #connection de signauxmutex = QtCore.QMutex()
 
-    ################################################
     def setupUi(self, MainWindow):
-        self.mutex = QMutex()
+
+        ###################### AJOUT ! ######################
+        # garder les lignes suivantes lors de la réécriture de l'interface !
+        app.aboutToQuit.connect(self.closeEvent) #connect le bouton X à "closeEvent"
+        #####################################################
+
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(421, 800)
+        MainWindow.resize(421, 400)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.sensib_slider = QtWidgets.QSlider(self.centralwidget)
+        self.sensib_slider.setEnabled(False)
         self.sensib_slider.setGeometry(QtCore.QRect(20, 60, 361, 16))
         self.sensib_slider.setMaximum(400)
         self.sensib_slider.setProperty("value", sensibilite)
         self.sensib_slider.setOrientation(QtCore.Qt.Horizontal)
         self.sensib_slider.setObjectName("sensib_slider")
+
         self.lcd_sensib = QtWidgets.QLCDNumber(self.centralwidget)
-        self.lcd_sensib.setGeometry(QtCore.QRect(230, 30, 64, 23))
+        self.lcd_sensib.setEnabled(False)
+        self.lcd_sensib.setGeometry(QtCore.QRect(315, 30, 64, 23))
         self.lcd_sensib.setSmallDecimalPoint(False)
         self.lcd_sensib.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
         self.lcd_sensib.setProperty("value", sensibilite)
         self.lcd_sensib.setObjectName("lcd_sensib")
+
         self.Capture = QtWidgets.QPushButton(self.centralwidget)
-        self.Capture.setGeometry(QtCore.QRect(160, 390, 89, 25))
+        self.Capture.setEnabled(False)
+        self.Capture.setGeometry(QtCore.QRect(160, 210, 100, 35))
         self.Capture.setObjectName("Capture")
+
         self.label_sensib = QtWidgets.QLabel(self.centralwidget)
-        self.label_sensib.setGeometry(QtCore.QRect(70, 30, 71, 17))
+        self.label_sensib.setEnabled(False)
+        #self.label_sensib.setGeometry(QtCore.QRect(70, 30, 71, 17))
+        self.label_sensib.setGeometry(QtCore.QRect(20, 30, 71, 17))
         self.label_sensib.setObjectName("label_sensib")
+
         self.espace_lignes_slider = QtWidgets.QSlider(self.centralwidget)
+        self.espace_lignes_slider.setEnabled(False)
         self.espace_lignes_slider.setGeometry(QtCore.QRect(20, 120, 361, 16))
         self.espace_lignes_slider.setMaximum(20)
         self.espace_lignes_slider.setProperty("value", space_lines)
         self.espace_lignes_slider.setOrientation(QtCore.Qt.Horizontal)
         self.espace_lignes_slider.setObjectName("espace_lignes_slider")
+
         self.lcd_espace_lignes = QtWidgets.QLCDNumber(self.centralwidget)
-        self.lcd_espace_lignes.setGeometry(QtCore.QRect(230, 90, 64, 23))
+        self.lcd_espace_lignes.setEnabled(False)
+        self.lcd_espace_lignes.setGeometry(QtCore.QRect(315, 90, 64, 23))
         self.lcd_espace_lignes.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
         self.lcd_espace_lignes.setProperty("value", space_lines)
         self.lcd_espace_lignes.setObjectName("lcd_espace_lignes")
+
         self.label_espace_ligne = QtWidgets.QLabel(self.centralwidget)
-        self.label_espace_ligne.setGeometry(QtCore.QRect(40, 90, 181, 20))
+        self.label_espace_ligne.setEnabled(False)
+        self.label_espace_ligne.setGeometry(QtCore.QRect(20, 90, 181, 20))
         self.label_espace_ligne.setObjectName("label_espace_ligne")
+
         self.espace_inter_slider = QtWidgets.QSlider(self.centralwidget)
+        self.espace_inter_slider.setEnabled(False)
         self.espace_inter_slider.setGeometry(QtCore.QRect(20, 180, 361, 16))
         self.espace_inter_slider.setMaximum(20)
         self.espace_inter_slider.setProperty("value", space_point)
         self.espace_inter_slider.setOrientation(QtCore.Qt.Horizontal)
         self.espace_inter_slider.setObjectName("espace_inter_slider")
+
         self.label_espace_inter = QtWidgets.QLabel(self.centralwidget)
-        self.label_espace_inter.setGeometry(QtCore.QRect(10, 140, 331, 31))
+        self.label_espace_inter.setEnabled(False)
+        self.label_espace_inter.setGeometry(QtCore.QRect(20, 140, 331, 31))
         self.label_espace_inter.setObjectName("label_espace_inter")
+
         self.lcd_espace_inter = QtWidgets.QLCDNumber(self.centralwidget)
-        self.lcd_espace_inter.setGeometry(QtCore.QRect(340, 140, 64, 23))
+        self.lcd_espace_inter.setEnabled(False)
+        self.lcd_espace_inter.setGeometry(QtCore.QRect(315, 140, 64, 23))
         self.lcd_espace_inter.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
         self.lcd_espace_inter.setProperty("value", space_point)
         self.lcd_espace_inter.setObjectName("lcd_espace_inter")
-        self.Quitter = QtWidgets.QPushButton(self.centralwidget)
-        self.Quitter.setGeometry(QtCore.QRect(140, 500, 141, 51))
+
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -347,8 +386,20 @@ class Ui_MainWindow(object):
         brush = QtGui.QBrush(QtGui.QColor(204, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
-        self.Quitter.setPalette(palette)
-        self.Quitter.setObjectName("Quitter")
+
+        #IP part
+        self.lineEdit_ip = QtWidgets.QLineEdit(self.centralwidget)
+        self.lineEdit_ip.setGeometry(QtCore.QRect(150, 270, 161, 25))
+        self.lineEdit_ip.setObjectName("lineEdit_ip")
+
+        self.label_adresse_ip = QtWidgets.QLabel(self.centralwidget)
+        self.label_adresse_ip.setGeometry(QtCore.QRect(50, 270, 121, 31))
+        self.label_adresse_ip.setObjectName("label_adresse_ip")
+
+        self.connect_button = QtWidgets.QPushButton(self.centralwidget)
+        self.connect_button.setGeometry(QtCore.QRect(110, 320, 91, 41))
+        self.connect_button.setObjectName("connect_button")
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 421, 22))
@@ -368,26 +419,15 @@ class Ui_MainWindow(object):
         self.sensib_slider.sliderMoved['int'].connect(self.set_sensib)
         self.espace_lignes_slider.sliderMoved['int'].connect(self.set_space_lines)
         self.espace_inter_slider.sliderMoved['int'].connect(self.set_space_point)
-        self.Quitter.clicked.connect(self.set_quit)
         self.Capture.clicked.connect(self.set_capture)
 
-
-
+        #ip part
+        self.connect_button.clicked.connect(self.set_connection)
 
         #connection de signaux
-        #self.Quitter.clicked.connect()
         ###########################################"####"#
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-
-
-
-        ###################### AJOUT ! #################
-        # garder les lignes suivantes lors de la réécriture de l'interface !
-        # # créatio thread
-        self.creat_n_run_thread()
-        ################################################
 
 
     def retranslateUi(self, MainWindow):
@@ -396,8 +436,21 @@ class Ui_MainWindow(object):
         self.Capture.setText(_translate("MainWindow", "Capture"))
         self.label_sensib.setText(_translate("MainWindow", "Sensibilité"))
         self.label_espace_ligne.setText(_translate("MainWindow", "Espace entre deux lignes"))
-        self.label_espace_inter.setText(_translate("MainWindow", "Espacement minimum entre  deux intersections"))
-        self.Quitter.setText(_translate("MainWindow", "Quitter"))
+        self.label_espace_inter.setText(_translate("MainWindow", "Espacement minimum entre deux intersections"))
+
+        #IP part :
+        self.lineEdit_ip.setText(_translate("MainWindow", robot_ip_address))
+        self.label_adresse_ip.setText(_translate("MainWindow", "Adresse IP  : "))
+        self.connect_button.setText(_translate("MainWindow", "Connect"))
+
+    def closeEvent(self) :
+        ''' call when the X button is clicked '''
+        global client
+        if (client == None) : # if the client is not define
+            return
+        else :
+            client.move_joints(*sleep_joints)
+            client.set_learning_mode(True)
 
     def set_sensib(self,entier) :
         global sensibilite
@@ -417,12 +470,6 @@ class Ui_MainWindow(object):
         space_point=entier
         lock.unlock()
 
-    def set_quit (self) :
-        global kill
-        lock.lockForWrite()
-        kill=True
-        lock.unlock()
-
     def set_execute (self) :
         global execute
         lock.lockForWrite()
@@ -434,6 +481,34 @@ class Ui_MainWindow(object):
         mlock.lock()
         capture=True
         mlock.unlock()
+
+    def set_connection (self) :
+        global robot_ip_address
+        robot_ip_address = self.lineEdit_ip.text()
+        print (robot_ip_address)
+        self.creat_n_run_thread() #lancement du thread
+        self.disableIp()
+        self.enableSlider()
+
+    def disableIp(self) :
+        self.lineEdit_ip.setEnabled(False)
+        self.label_adresse_ip.setEnabled(False)
+        self.connect_button.setEnabled(False)
+
+    def enableSlider(self) :
+        self.sensib_slider.setEnabled(True)
+        self.Capture.setEnabled(True)
+        self.lcd_sensib.setEnabled(True)
+        self.espace_lignes_slider.setEnabled(True)
+        self.label_sensib.setEnabled(True)
+        self.lcd_espace_inter.setEnabled(True)
+        self.label_espace_inter.setEnabled(True)
+        self.espace_inter_slider.setEnabled(True)
+        self.label_espace_ligne.setEnabled(True)
+        self.lcd_espace_lignes.setEnabled(True)
+        self.espace_lignes_slider.setEnabled(True)
+
+
 
     def creat_n_run_thread(self) :
         self.thread = QThread()
@@ -451,7 +526,7 @@ class robot_opencv(QObject):
 
     def run (self) :
         """ tache du robot et opencv """
-        #signaux à ajouter
+        global client
 
 
         # Connect to robot
@@ -470,8 +545,11 @@ class robot_opencv(QObject):
             client.set_learning_mode(True)
             logging.info("erreur")
 
+        client.move_joints(*sleep_joints)
+        client.set_learning_mode(True)
         # Releasing connection
         client.quit()
+        client = None
 
 if __name__ == '__main__' :
     app = QtWidgets.QApplication(sys.argv)
