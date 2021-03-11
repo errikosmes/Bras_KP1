@@ -5,7 +5,12 @@ import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import os
+import tensorflow as tf
 
+
+objects_names = os.listdir("model IA/data/")
+model = tf.keras.models.load_model('model IA/model')
 
 def distance_euclidienne(p1,p2):
 
@@ -29,7 +34,7 @@ def keep_biggest_contours(img, bc):
         j+=1
     return new_bc
 
-def find_objects_workshop2(image,nb_objets=10):
+def find_objects_workshop_old(image,nb_objets=10):
     """
     Trouve les barycentres des objets du workshop
     Parameters
@@ -100,10 +105,69 @@ def find_objects_workshop(image):
     # plt.imshow(img)
     return bc, angles
 
+def find_objects_workshop_ML(image):
+    """
+    Trouve les barycentres des objets du workshop
+    Parameters
+    ----------
+    image : Frame
+
+    Returns
+    -------
+    bc : Tableau des barycentres
+
+    """
+    def get_objs(img):
+        img = standardize_img(img)
+        mask = objs_mask(img)
+        objs = extract_objs(img, mask)
+        return objs
+    
+    img=image
+    img_rs= remove_shadows(image)
+    
+    objs_ml = get_objs(img)
+    objs_rs = get_objs(img_rs)
+        
+    cpt=0
+    bc=[]
+    angles=[]
+    
+    imgs = []
+    #resize all objects img to 64*64 pixels
+    for x in range(len(objs_ml)):
+        imgs.append(resize_img(objs_ml[x].img, width=64, height=64))
+
+    imgs = np.array(imgs)
+
+    #predict all the images
+    predictions = model.predict(imgs)
+    objs_pred = []
+    
+    for x in range(len(predictions)):
+        obj = objs_ml[x]
+        pred = predictions[x].argmax()
+        objs_pred.append([objects_names[pred],(obj.x,obj.y)])
+        
+    
+    for x in range(len(objs_rs)):
+        obj = objs_rs[x]
+        bc.append((obj.x,obj.y))
+        angles.append(obj.angle)
+    
+    # plt.imshow(img)
+    return bc, angles, objs_pred
+
+
 
 def get_obj_pose(client, workspace, image,nb_objet=3):
+    # seuil_px, comparaison obj prédit et autres
+    # bc, angles = find_objects_workshop(image)
+    seuil_px = 30
+    preds = []
+    bc, angles, preds = find_objects_workshop_ML(image)
     
-    bc, angles = find_objects_workshop(image)
+    new_preds = preds.copy()
     
     objs_pose=[]
     for i in range(len(bc)):
@@ -113,8 +177,16 @@ def get_obj_pose(client, workspace, image,nb_objet=3):
         status, obj_pose = client.get_target_pose_from_rel(workspace, 0.0, x, y, angles[i])
          
         objs_pose.append(([obj_pose], bc[i]))
-        
-    return objs_pose, bc
+    
+    for obj_p in range(0,len(preds)):
+        pt_pred = preds[obj_p][1]
+        for pt_obj in bc:
+            d = distance_euclidienne(pt_pred,pt_obj)
+            if d < 30:
+                new_preds[obj_p][1] = pt_obj
+                break
+                
+    return objs_pose, bc, new_preds
 
 
 # rotate a numpy img
@@ -169,6 +241,7 @@ def extract_objs(img, mask):
 
             try:
                 angle = get_contour_angle(cnt)
+                angle+=0.1
             except:
                 angle = 0
 
@@ -271,6 +344,7 @@ def remove_shadows(img):
     
     result = cv.merge(result_planes)
     return(result)
+
 # wkshop = "Workshop_v2"
 # robot_ip_address = "10.10.10.10"
 
