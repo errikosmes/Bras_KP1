@@ -15,7 +15,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 sensibilite = 200
 space_lines = 5
 space_point = 5
-execute = False
 capture = False
 client = None
 
@@ -24,13 +23,13 @@ mlock = QMutex()
 
 # Inits
 # Set robot address
-#robot_ip_address = None
-robot_ip_address = "10.10.10.10"
+robot_ip_address = "10.10.10.10" #adresse ip "d'origine"
 # robot_ip_address = "169.254.200.200"
 
 #init logging
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
+#pince placé sur le robot
 tool_used = RobotTool.GRIPPER_2
 
 # Définition des Workspaces
@@ -95,7 +94,6 @@ def main_thread(client):
             return img_workspace, res_img_markers
 
     def select_and_pick(client,tab_pose) :
-        global execute
         global capture
 
         while True:
@@ -119,14 +117,9 @@ def main_thread(client):
         cv2.setMouseCallback('Workspace', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = line_img.copy()
 
-        lock.lockForRead()
-        capt = capture
-        not_quit_n_not_exec =  not(execute)
-        lock.unlock()
-
         continue_capture = True
 
-        while not_quit_n_not_exec:
+        while True :
             #texte
             bottomLeftCornerOfText = (10,30)
             if (len(tab_pose)>len(POISelected)) :
@@ -134,7 +127,7 @@ def main_thread(client):
             elif (len(tab_pose)<len(POISelected)) :
                 cv2.putText(line_img,str(len(POISelected)-len(tab_pose))+' points selectionne en trop !', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
             else :
-                cv2.putText(line_img,'ok', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2)
+                cv2.putText(line_img,'ok - Press Enter', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2)
             #fin texte
 
             # draw region of interest rectangles
@@ -148,11 +141,11 @@ def main_thread(client):
 
             if ((key in [27, ord('\n'), ord('\r'), ord("q")]) and (len(tab_pose) is len(POISelected))):  # Will break loop if the user press Escape or Q
                 break
-            lock.lockForRead()
-            not_quit_n_not_exec =  not(execute)
 
+            lock.lockForRead()
             capt = capture
             lock.unlock()
+
             if capt :
                 mlock.lock()
                 capture = False
@@ -367,6 +360,7 @@ class Ui_MainWindow(object):
         self.lcd_espace_inter.setProperty("value", space_point)
         self.lcd_espace_inter.setObjectName("lcd_espace_inter")
 
+
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -399,6 +393,8 @@ class Ui_MainWindow(object):
         self.connect_button = QtWidgets.QPushButton(self.centralwidget)
         self.connect_button.setGeometry(QtCore.QRect(110, 320, 91, 41))
         self.connect_button.setObjectName("connect_button")
+
+        self.enable_disable(False) #disable slider part and enable Ip part
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -470,12 +466,6 @@ class Ui_MainWindow(object):
         space_point=entier
         lock.unlock()
 
-    def set_execute (self) :
-        global execute
-        lock.lockForWrite()
-        execute=True
-        lock.unlock()
-
     def set_capture (self) :
         global capture
         mlock.lock()
@@ -487,26 +477,26 @@ class Ui_MainWindow(object):
         robot_ip_address = self.lineEdit_ip.text()
         print (robot_ip_address)
         self.creat_n_run_thread() #lancement du thread
-        self.disableIp()
-        self.enableSlider()
+        self.enable_disable(True)
 
-    def disableIp(self) :
-        self.lineEdit_ip.setEnabled(False)
-        self.label_adresse_ip.setEnabled(False)
-        self.connect_button.setEnabled(False)
+    def enable_disable(self,var=False) :
+        ''' enable slider part and disable ip part when var == True
+            disable slider part and enable ip part when var == False'''
+        self.lineEdit_ip.setEnabled(not(var))
+        self.label_adresse_ip.setEnabled(not(var))
+        self.connect_button.setEnabled(not(var))
 
-    def enableSlider(self) :
-        self.sensib_slider.setEnabled(True)
-        self.Capture.setEnabled(True)
-        self.lcd_sensib.setEnabled(True)
-        self.espace_lignes_slider.setEnabled(True)
-        self.label_sensib.setEnabled(True)
-        self.lcd_espace_inter.setEnabled(True)
-        self.label_espace_inter.setEnabled(True)
-        self.espace_inter_slider.setEnabled(True)
-        self.label_espace_ligne.setEnabled(True)
-        self.lcd_espace_lignes.setEnabled(True)
-        self.espace_lignes_slider.setEnabled(True)
+        self.sensib_slider.setEnabled(var)
+        self.Capture.setEnabled(var)
+        self.lcd_sensib.setEnabled(var)
+        self.espace_lignes_slider.setEnabled(var)
+        self.label_sensib.setEnabled(var)
+        self.lcd_espace_inter.setEnabled(var)
+        self.label_espace_inter.setEnabled(var)
+        self.espace_inter_slider.setEnabled(var)
+        self.label_espace_ligne.setEnabled(var)
+        self.lcd_espace_lignes.setEnabled(var)
+        self.espace_lignes_slider.setEnabled(var)
 
 
 
@@ -545,11 +535,12 @@ class robot_opencv(QObject):
             client.set_learning_mode(True)
             logging.info("erreur")
 
-        client.move_joints(*sleep_joints)
+
         client.set_learning_mode(True)
         # Releasing connection
         client.quit()
         client = None
+
 
 if __name__ == '__main__' :
     app = QtWidgets.QApplication(sys.argv)
