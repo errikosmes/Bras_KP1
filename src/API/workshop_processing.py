@@ -6,6 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import tensorflow as tf
 
 
@@ -14,13 +17,13 @@ model = tf.keras.models.load_model('model IA/model')
 
 def distance_euclidienne(p1,p2):
 
-    X = (p1[0]-p2[0])**2 
+    X = (p1[0]-p2[0])**2
     Y = (p1[1]-p2[1])**2
-    
+
     return math.sqrt(X+Y)
 
 def keep_biggest_contours(img, bc):
-    
+
     bc_recherche = bc.copy()
     new_bc = bc.copy()
     j=0
@@ -47,34 +50,34 @@ def find_objects_workshop_old(image,nb_objets=10):
     bc : Tableau des barycentres
 
     """
-    
+
     img= remove_shadows(image)
-    
+
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    mask = gray > 170    
+    mask = gray > 170
     img_mask = gray * mask
-    
+
     objs = (img_mask == 0)*255
-    objs = objs.astype(np.uint8)    
-    contours = biggest_contours_finder(objs,nb_contours_max=nb_objets)    
+    objs = objs.astype(np.uint8)
+    contours = biggest_contours_finder(objs,nb_contours_max=nb_objets)
     # cv.drawContours(image, contours, -1, (0,255,0),3)
-    
+
     # Barycenters
     bc = []
     angles = []
-    
+
     for i in contours:
         angle = get_contour_angle(i)
         cx,cy = get_contour_barycenter(i)
         bc.append((cx,cy))
         angles.append(angle)
-        
+
     cpt=0
     for (cx,cy) in bc:
         img = cv2.putText(img, str(cpt),(cx,cy),cv.FONT_HERSHEY_SCRIPT_SIMPLEX, 1,color=(0,0,0), thickness=2)
         cpt+=1
-     
-    
+
+
     return bc, angles
 
 def find_objects_workshop(image):
@@ -91,7 +94,7 @@ def find_objects_workshop(image):
     """
     img= remove_shadows(image)
     img = standardize_img(img)
-    
+
     mask = objs_mask(img)
     objs = extract_objs(img, mask)
     cpt=0
@@ -122,17 +125,17 @@ def find_objects_workshop_ML(image):
         mask = objs_mask(img)
         objs = extract_objs(img, mask)
         return objs
-    
+
     img=image
     img_rs= remove_shadows(image)
-    
+
     objs_ml = get_objs(img)
     objs_rs = get_objs(img_rs)
-        
+
     cpt=0
     bc=[]
     angles=[]
-    
+
     imgs = []
     #resize all objects img to 64*64 pixels
     for x in range(len(objs_ml)):
@@ -143,18 +146,18 @@ def find_objects_workshop_ML(image):
     #predict all the images
     predictions = model.predict(imgs)
     objs_pred = []
-    
+
     for x in range(len(predictions)):
         obj = objs_ml[x]
         pred = predictions[x].argmax()
         objs_pred.append([objects_names[pred],(obj.x,obj.y)])
-        
-    
+
+
     for x in range(len(objs_rs)):
         obj = objs_rs[x]
         bc.append((obj.x,obj.y))
         angles.append(obj.angle)
-    
+
     # plt.imshow(img)
     return bc, angles, objs_pred
 
@@ -166,18 +169,18 @@ def get_obj_pose(client, workspace, image,nb_objet=3):
     seuil_px = 30
     preds = []
     bc, angles, preds = find_objects_workshop_ML(image)
-    
+
     new_preds = preds.copy()
-    
+
     objs_pose=[]
     for i in range(len(bc)):
-        
+
         x,y = relative_pos_from_pixels(image,bc[i][0],bc[i][1])
-        
+
         status, obj_pose = client.get_target_pose_from_rel(workspace, 0.0, x, y, angles[i])
-         
+
         objs_pose.append(([obj_pose], bc[i]))
-    
+
     for obj_p in range(0,len(preds)):
         pt_pred = preds[obj_p][1]
         for pt_obj in bc:
@@ -185,7 +188,7 @@ def get_obj_pose(client, workspace, image,nb_objet=3):
             if d < 30:
                 new_preds[obj_p][1] = pt_obj
                 break
-                
+
     return objs_pose, bc, new_preds
 
 
@@ -207,7 +210,7 @@ class CameraObject(object):
         self.box = box
         self.square = square
         self.type = None
-        
+
 def threshold_hls(img, list_min_hsv, list_max_hsv):
     frame_hsl = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
     return cv2.inRange(frame_hsl, tuple(list_min_hsv), tuple(list_max_hsv))
@@ -233,7 +236,7 @@ def extract_objs(img, mask):
     img = concat_imgs([blank, img, blank], 0)
     blank = np.zeros(img.shape, np.uint8)
     img = concat_imgs([blank, img, blank], 1)
-   
+
     #for all the contour in the image, copy the corresponding object
     if cnts is not None:
         for cnt in cnts:
@@ -341,7 +344,7 @@ def remove_shadows(img):
         bg_img = cv.medianBlur(dilated_img, 11)
         diff_img = 255 - cv.absdiff(plane, bg_img)
         result_planes.append(diff_img)
-    
+
     result = cv.merge(result_planes)
     return(result)
 
@@ -356,4 +359,3 @@ def remove_shadows(img):
 #     client.calibrate(CalibrateMode.AUTO)
 #     a,bc = get_obj_pose(client, wkshop, image, 3)
 #     client.quit()
-
