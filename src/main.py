@@ -307,7 +307,7 @@ class Ui_MainWindow(object):
         #####################################################
 
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(421, 400)
+        MainWindow.resize(421, 400) 
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.sensib_slider = QtWidgets.QSlider(self.centralwidget)
@@ -559,6 +559,7 @@ class robot_opencv(QObject):
 
 if __name__ == '__main__' :
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon('icon.png'))
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
