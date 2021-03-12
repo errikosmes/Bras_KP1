@@ -187,7 +187,9 @@ def main_thread(client):
         '''renvoie False False si le bouton "Capture a été actionné'''
         global capture
 
-        tab_pose_bc, bc = get_obj_pose(niryo_one_client, wkshop, image)
+        tab_pose_bc, bc, preds = get_obj_pose(niryo_one_client, wkshop, image)
+        np_preds = [item for sublist in preds for item in sublist]
+        
 
         POI = bc #Points Of Interest
         POISelected = []
@@ -222,12 +224,21 @@ def main_thread(client):
 
             if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
                 break
-
+            
+            
+        
         tab_pose=[]
         for obj_selected in POISelected:
             if obj_selected in bc:
                 tab_pose.append(tab_pose_bc[bc.index(obj_selected)][0])
-
+            try:
+                if obj_selected in np_preds:
+                    name_obj_selected = np_preds[np_preds.index(obj_selected)-1]
+                    print(name_obj_selected, 'selected !')
+            except:
+                print('Object not recognized !')
+                continue
+            
         return tab_pose, len(POISelected)
 
     def workshop_stream(niryo_one_client):
@@ -534,7 +545,6 @@ class robot_opencv(QObject):
             client.move_joints(*sleep_joints)
             client.set_learning_mode(True)
             logging.info("erreur")
-
 
         client.set_learning_mode(True)
         # Releasing connection
