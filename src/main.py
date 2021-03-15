@@ -107,7 +107,7 @@ def main_thread(client):
                 line_img=None
 
 
-        POI = line_inter(line_img,400-sensibilite,space_lines/100,space_point) #Points Of Interest
+        POI = line_inter(line_img,350-sensibilite,space_lines/100,space_point) #Points Of Interest
  #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
@@ -189,8 +189,13 @@ def main_thread(client):
 
         tab_pose_bc, bc, preds = get_obj_pose(niryo_one_client, wkshop, image)
         np_preds = [item for sublist in preds for item in sublist]
+<<<<<<< Updated upstream
         
         
+=======
+
+
+>>>>>>> Stashed changes
         POI = bc #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
@@ -230,9 +235,9 @@ def main_thread(client):
 
             if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
                 break
-            
-            
-        
+
+
+
         tab_pose=[]
         for obj_selected in POISelected:
             if obj_selected in bc:
@@ -244,7 +249,7 @@ def main_thread(client):
             except:
                 print('Object not recognized !')
                 continue
-            
+
         return tab_pose, len(POISelected)
 
     def workshop_stream(niryo_one_client):
@@ -313,7 +318,7 @@ class Ui_MainWindow(object):
         self.sensib_slider = QtWidgets.QSlider(self.centralwidget)
         self.sensib_slider.setEnabled(False)
         self.sensib_slider.setGeometry(QtCore.QRect(20, 60, 361, 16))
-        self.sensib_slider.setMaximum(400)
+        self.sensib_slider.setMaximum(350)
         self.sensib_slider.setProperty("value", sensibilite)
         self.sensib_slider.setOrientation(QtCore.Qt.Horizontal)
         self.sensib_slider.setObjectName("sensib_slider")
