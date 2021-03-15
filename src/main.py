@@ -197,12 +197,18 @@ def main_thread(client):
         tab_pose_bc, bc, preds = get_obj_pose(niryo_one_client, wkshop, image)
         np_preds = [item for sublist in preds for item in sublist]
         
-
+        
         POI = bc #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
         regionSize = 30
-
+ 
+        bottomLeftCornerOfText = (60,30)
+        if len(bc) == 0:
+            cv2.putText(image,'Shop is empty ! Add objects and click CAPTURE or press ENTER to quit', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,255),2)
+        else:
+            writeNames(image, preds, regionSize)
+        
         show_img('Workspace 2', image, wait_ms=10)
         cv2.setMouseCallback('Workspace 2', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = image.copy()

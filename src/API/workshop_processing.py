@@ -144,9 +144,11 @@ def find_objects_workshop_ML(image):
     imgs = np.array(imgs)
 
     #predict all the images
-    predictions = model.predict(imgs)
+    try:
+        predictions = model.predict(imgs)
+    except:
+        predictions=[]
     objs_pred = []
-
     for x in range(len(predictions)):
         obj = objs_ml[x]
         pred = predictions[x].argmax()
