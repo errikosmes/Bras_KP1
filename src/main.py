@@ -190,12 +190,18 @@ def main_thread(client):
         tab_pose_bc, bc, preds = get_obj_pose(niryo_one_client, wkshop, image)
         np_preds = [item for sublist in preds for item in sublist]
         
-
+        
         POI = bc #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
         regionSize = 30
-
+ 
+        bottomLeftCornerOfText = (60,30)
+        if len(bc) == 0:
+            cv2.putText(image,'Shop is empty ! Add objects and click CAPTURE or press ENTER to quit', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,255),2)
+        else:
+            writeNames(image, preds, regionSize)
+        
         show_img('Workspace 2', image, wait_ms=10)
         cv2.setMouseCallback('Workspace 2', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = image.copy()
@@ -234,7 +240,7 @@ def main_thread(client):
             try:
                 if obj_selected in np_preds:
                     name_obj_selected = np_preds[np_preds.index(obj_selected)-1]
-                    print(name_obj_selected, 'selected !')
+            
             except:
                 print('Object not recognized !')
                 continue
@@ -301,7 +307,7 @@ class Ui_MainWindow(object):
         #####################################################
 
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(421, 400)
+        MainWindow.resize(421, 400) 
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.sensib_slider = QtWidgets.QSlider(self.centralwidget)
@@ -551,9 +557,9 @@ class robot_opencv(QObject):
         client.quit()
         client = None
 
-
 if __name__ == '__main__' :
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon('icon.png'))
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
