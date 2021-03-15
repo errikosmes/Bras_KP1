@@ -3,7 +3,6 @@ from niryo_one_tcp_client import *
 from niryo_one_camera import *
 import cv2 as cv
 import numpy as np
-import matplotlib.pyplot as plt
 import math
 import os
 

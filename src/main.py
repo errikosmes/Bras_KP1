@@ -247,7 +247,7 @@ def main_thread(client):
             try:
                 if obj_selected in np_preds:
                     name_obj_selected = np_preds[np_preds.index(obj_selected)-1]
-                    print(name_obj_selected, 'selected !')
+            
             except:
                 print('Object not recognized !')
                 continue
