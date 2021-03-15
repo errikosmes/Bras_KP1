@@ -5,6 +5,13 @@ import numpy as np
 # DESSINS RECTANGLE APPLICATION ERRIKOS
 # =============================================================================
 
+def writeNames(img, preds,size):
+    offset_y=20
+    for elt in preds:
+        img = cv.putText(img,elt[0].replace('_',' '), (elt[1][0]-size,elt[1][1]+size+offset_y) , cv.FONT_HERSHEY_SIMPLEX, 0.6,(0,255,255),2)
+        
+
+
 def drawUnselected(img, rectCenter, size):
     img=cv.rectangle(img, (int(rectCenter[0])-size, int(rectCenter[1])-size), (int(rectCenter[0])+size, int(rectCenter[1])+size), (0, 0, 255), 3)
     return img

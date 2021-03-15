@@ -187,13 +187,21 @@ def main_thread(client):
         '''renvoie False False si le bouton "Capture a été actionné'''
         global capture
 
-        tab_pose_bc, bc = get_obj_pose(niryo_one_client, wkshop, image)
-
+        tab_pose_bc, bc, preds = get_obj_pose(niryo_one_client, wkshop, image)
+        np_preds = [item for sublist in preds for item in sublist]
+        
+        
         POI = bc #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
         regionSize = 30
-
+ 
+        bottomLeftCornerOfText = (60,30)
+        if len(bc) == 0:
+            cv2.putText(image,'Shop is empty ! Add objects and click CAPTURE or press ENTER to quit', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,255),2)
+        else:
+            writeNames(image, preds, regionSize)
+        
         show_img('Workspace 2', image, wait_ms=10)
         cv2.setMouseCallback('Workspace 2', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = image.copy()
@@ -222,12 +230,21 @@ def main_thread(client):
 
             if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
                 break
-
+            
+            
+        
         tab_pose=[]
         for obj_selected in POISelected:
             if obj_selected in bc:
                 tab_pose.append(tab_pose_bc[bc.index(obj_selected)][0])
-
+            try:
+                if obj_selected in np_preds:
+                    name_obj_selected = np_preds[np_preds.index(obj_selected)-1]
+            
+            except:
+                print('Object not recognized !')
+                continue
+            
         return tab_pose, len(POISelected)
 
     def workshop_stream(niryo_one_client):
@@ -535,12 +552,10 @@ class robot_opencv(QObject):
             client.set_learning_mode(True)
             logging.info("erreur")
 
-
         client.set_learning_mode(True)
         # Releasing connection
         client.quit()
         client = None
-
 
 if __name__ == '__main__' :
     app = QtWidgets.QApplication(sys.argv)
