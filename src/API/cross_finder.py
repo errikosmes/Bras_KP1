@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Fri Jan 29 09:57:22 2021
+cross_finder.py : This is file is used to find lines cross in an image.
 
-@author: kat
+@authors: BORDEAU Raphaël - DE LA FUENTE Léo - GOURJON Amélie - MESSARA Errikos - PAGNY Louis
 """
 
 import cv2 as cv
