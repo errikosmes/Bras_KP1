@@ -370,7 +370,7 @@ def find_croisement(lines):
                         if (not np.isnan(inter_x)) and (not np.isnan(inter_y)):
                             inter.append(   (round(inter_x), round(inter_y))   )
     else:
-        print('erreur')
-
+        print('[ERROR] Error!')
+    
     return(inter)
         #

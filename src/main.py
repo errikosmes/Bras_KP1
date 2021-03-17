@@ -123,9 +123,9 @@ def main_thread(client):
             #texte
             bottomLeftCornerOfText = (10,30)
             if (len(tab_pose)>len(POISelected)) :
-                cv2.putText(line_img,'Encore '+ str(len(tab_pose)-len(POISelected))+ ' a selectionner', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
+                cv2.putText(line_img,str(len(tab_pose)-len(POISelected))+ ' left to pick', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
             elif (len(tab_pose)<len(POISelected)) :
-                cv2.putText(line_img,str(len(POISelected)-len(tab_pose))+' points selectionne en trop !', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
+                cv2.putText(line_img,str(len(POISelected)-len(tab_pose))+' excess points picked!', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
             else :
                 cv2.putText(line_img,'ok - Press Enter', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2)
             #fin texte
@@ -162,7 +162,7 @@ def main_thread(client):
 
     def pick_from_POIselected(POISelected, tab_pose):
         if len(POISelected) > len(tab_pose):
-            print("[ERROR] Point de placement supérieur au nombre d'objet")
+            print("[ERROR] Placement point greater than number of object")
 
         else:
             cpt=0
@@ -173,7 +173,7 @@ def main_thread(client):
                 try:
                     if(tab_pose[cpt][0].z < 0.12):
                         #print(tab_pose[cpt][0])
-                        print('[ERROR] ATTENTION z is to small!')
+                        print('[ERROR] z is to small!')
                         break
                     client.pick_from_pose(*tab_pose[cpt][0].to_list()) # pick from workshop
                 except:
@@ -184,7 +184,7 @@ def main_thread(client):
                 cpt+=1
 
     def find_target(niryo_one_client, image):
-        '''renvoie False False si le bouton "Capture a été actionné'''
+        '''Return False if  "Capture clicked'''
         global capture
 
         tab_pose_bc, bc, preds = get_obj_pose(niryo_one_client, wkshop, image)
@@ -446,13 +446,13 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.Capture.setText(_translate("MainWindow", "Capture"))
-        self.label_sensib.setText(_translate("MainWindow", "Sensibilité"))
-        self.label_espace_ligne.setText(_translate("MainWindow", "Espace entre deux lignes"))
-        self.label_espace_inter.setText(_translate("MainWindow", "Espacement minimum entre deux intersections"))
+        self.label_sensib.setText(_translate("MainWindow", "Sensibility"))
+        self.label_espace_ligne.setText(_translate("MainWindow", "Space between two lines"))
+        self.label_espace_inter.setText(_translate("MainWindow", "Minimum space between two cross"))
 
         #IP part :
         self.lineEdit_ip.setText(_translate("MainWindow", robot_ip_address))
-        self.label_adresse_ip.setText(_translate("MainWindow", "Adresse IP  : "))
+        self.label_adresse_ip.setText(_translate("MainWindow", "IP adress : "))
         self.connect_button.setText(_translate("MainWindow", "Connect"))
 
     def closeEvent(self) :
@@ -531,7 +531,6 @@ class Ui_MainWindow(object):
 class robot_opencv(QObject):
 
     def run (self) :
-        """ tache du robot et opencv """
         global client
 
 
