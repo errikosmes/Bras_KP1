@@ -189,13 +189,7 @@ def main_thread(client):
 
         tab_pose_bc, bc, preds = get_obj_pose(niryo_one_client, wkshop, image)
         np_preds = [item for sublist in preds for item in sublist]
-<<<<<<< Updated upstream
-        
-        
-=======
 
-
->>>>>>> Stashed changes
         POI = bc #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
