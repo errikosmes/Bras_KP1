@@ -42,6 +42,12 @@ observation_pose_wkshop = PoseObject(
     roll=-0.504, pitch=1.553, yaw=-2.078,
 )
 
+# POS observation workshop
+# observation_pose_wkshop = PoseObject(
+#     x=-0.00, y=-0.207, z=0.246,
+#     roll=1.848, pitch=1.472, yaw=-0.014
+# )
+
 # POS observation Packing AREA
 observation_pose_dwks = PoseObject(
     x=0.2, y=0.0, z=0.34,
@@ -407,7 +413,7 @@ class Ui_MainWindow(object):
         self.label_adresse_ip.setObjectName("label_adresse_ip")
 
         self.connect_button = QtWidgets.QPushButton(self.centralwidget)
-        self.connect_button.setGeometry(QtCore.QRect(110, 320, 91, 41))
+        self.connect_button.setGeometry(QtCore.QRect(160, 320, 91, 41))
         self.connect_button.setObjectName("connect_button")
 
         self.enable_disable(False) #disable slider part and enable Ip part

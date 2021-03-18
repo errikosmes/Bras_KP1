@@ -278,7 +278,8 @@ def type_croisement(lines):
         #print('Une ou aucune droite')
 
     else:
-        if ( droites[0] % (np.pi/2) >= - 0.1 ) and (droites[1] % (np.pi/2) >= - 0.1) and ( droites[0] % (np.pi/2) <= 0.1 ) and (droites[1] % (np.pi/2) <=  0.1):
+        s=0.05
+        if ( droites[0] % (np.pi/2) >= - s ) and (droites[1] % (np.pi/2) >= - s) and ( droites[0] % (np.pi/2) <= s ) and (droites[1] % (np.pi/2) <=  s):
             type_droite = 0
             #print('Droite horizontale et verticale')
 
@@ -340,7 +341,7 @@ def find_croisement(lines):
                 inter.append(( round(x0i), round(y0i+y0j) ))
 
 
-    elif (type_droite > 0)  :
+    elif (type_droite > 0):
         for i in range ( len(tab_of_types)  ):
             for j in range ( len(tab_of_types[i]) ):
 
@@ -370,7 +371,7 @@ def find_croisement(lines):
                         if (not np.isnan(inter_x)) and (not np.isnan(inter_y)):
                             inter.append(   (round(inter_x), round(inter_y))   )
     else:
-        print('[ERROR] Error!')
-    
+        print('erreur')
+
     return(inter)
-        #
+        
