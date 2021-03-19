@@ -454,7 +454,7 @@ class Ui_MainWindow(object):
         self.Capture.setText(_translate("MainWindow", "Capture"))
         self.label_sensib.setText(_translate("MainWindow", "Sensibility"))
         self.label_espace_ligne.setText(_translate("MainWindow", "Space between two lines"))
-        self.label_espace_inter.setText(_translate("MainWindow", "Minimum space between two cross"))
+        self.label_espace_inter.setText(_translate("MainWindow", "Minimum space between two points"))
 
         #IP part :
         self.lineEdit_ip.setText(_translate("MainWindow", robot_ip_address))
