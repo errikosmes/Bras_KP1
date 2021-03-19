@@ -29,10 +29,10 @@ robot_ip_address = "10.10.10.10" #adresse ip "d'origine"
 #init logging
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-#pince placé sur le robot
+#griiper used on the arm
 tool_used = RobotTool.GRIPPER_2
 
-# Définition des Workspaces
+# Workspaces' definition (set with niryonestudio)
 wkshop = "Workshop_v2"
 dwks = "default_workspace"  # Robot's placing Workspace Name
 
@@ -41,12 +41,6 @@ observation_pose_wkshop = PoseObject(
     x=-0.0002, y=-0.199, z=0.262,
     roll=-0.504, pitch=1.553, yaw=-2.078,
 )
-
-# POS observation workshop
-# observation_pose_wkshop = PoseObject(
-#     x=-0.00, y=-0.207, z=0.246,
-#     roll=1.848, pitch=1.472, yaw=-0.014
-# )
 
 # POS observation Packing AREA
 observation_pose_dwks = PoseObject(
@@ -59,12 +53,24 @@ sleep_joints = [-1.6, 0.152, -1.3, 0.1, 0.01, 0.04]
 
 
 def main_thread(client):
+    """
+    fonction executed by the thread to control the arm, do the vision analyse,
+    and open the 2 opencv windows
+    """
+
+    # global variable to catch the value of sliders of GUI and robot ip adress
     global sensibilite
     global space_lines
     global space_point
     global robot_ip_address
 
     def stream_init(client, observation_pose, workspace_ratio=1.0):
+        """
+        put the arm on the position observation_pose, and try to extract a workspace
+        with the camera. If no workspace foud, try continuously, if a workspace is found,
+        return the image of the workspace  :  img_workspace, and the image with the detection
+        of markers : res_img_markers
+        """
 
          # Getting calibration param
         _, mtx, dist = client.get_calibration_object()
@@ -87,46 +93,54 @@ def main_thread(client):
             if workspace_found: img_workspace = extract_img_workspace(img_undistort, workspace_ratio=workspace_ratio)
             else: img_workspace = None
 
-            # - Display
-            # Concatenating raw image and undistorted image
-            concat_ims = concat_imgs((img_raw, img_undistort))
-
             # Concatenating extracted workspace with markers annotation
             if img_workspace is not None: res_img_markers = concat_imgs((res_img_markers, resize_img(img_workspace, height=res_img_markers.shape[0])))
-
-            # Showing images
-            # show_img("Images raw & undistorted", concat_ims, wait_ms=0)
 
             return img_workspace, res_img_markers
 
     def select_and_pick(client,tab_pose) :
+        """ fonction used by the thread to show the image of the workspace default_workspace,
+        and propose to the user the intersections whee the objects could be placed
+        If the user clicled on "enter" or "q", the arm execute the movements
+        If the button capture was clicked, the function return True, and no movements was executed
+        """
+
+        # global variable link to the button capture on the GUI
         global capture
 
         while True:
-            img_workspace, res_img_markers = stream_init(client, observation_pose_dwks)
+            img_workspace, res_img_markers = stream_init(client, observation_pose_dwks) # catch the workspace
 
-            if img_workspace is not None:
+            if img_workspace is not None: # check if the workspace is find
                 line_img = resize_img(img_workspace, height=res_img_markers.shape[0])
-
-                break
+                break # exit the while loop
             else:
                 line_img=None
 
+        # catch the values of sliders :
+        lock.lockForRead()
+        sensibilite_lock=sensibilite
+        space_lines_lock=space_lines
+        space_point_lock=space_point
+        lock.unlock()
 
-        POI = line_inter(line_img,350-sensibilite,space_lines/100,space_point) #Points Of Interest
- #Points Of Interest
+        # POI : Point of interest :
+        # catch the intersections find on the image with the parameters puted
+        # on the sliders
+        POI = line_inter(line_img,350-sensibilite_lock,space_lines_lock/100,space_point_lock)
+        #Points Of Interest
         POISelected = []
         clickCoord = [0, 0]
         regionSize = 30
 
         show_img('Workspace', line_img, wait_ms=10)
         cv2.setMouseCallback('Workspace', selectRectCallback, param=[POI, POISelected, regionSize])
-        imgCached = line_img.copy()
+        imgCached = line_img.copy() # imgcached = image without rectangle or texte
 
-        continue_capture = True
 
         while True :
-            #texte
+            # put text to say to the user if The number of points selected is too
+            #  high , too low, or ok
             bottomLeftCornerOfText = (10,30)
             if (len(tab_pose)>len(POISelected)) :
                 cv2.putText(line_img,str(len(tab_pose)-len(POISelected))+ ' left to pick', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
@@ -134,7 +148,7 @@ def main_thread(client):
                 cv2.putText(line_img,str(len(POISelected)-len(tab_pose))+' excess points picked!', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
             else :
                 cv2.putText(line_img,'ok - Press Enter', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2)
-            #fin texte
+
 
             # draw region of interest rectangles
             for point in POI:
@@ -143,28 +157,28 @@ def main_thread(client):
                 else: drawUnselected(line_img,point,regionSize)
 
             key = show_img('Workspace', line_img)
-            line_img = imgCached.copy()
+            line_img = imgCached.copy() # reload image cached in line_img (without rectangle and text)
 
+            # if enter is pressed and the godd number  of POI is selected : break the loop
             if ((key in [27, ord('\n'), ord('\r'), ord("q")]) and (len(tab_pose) is len(POISelected))):  # Will break loop if the user press Escape or Q
                 break
 
+            # catch the value of global variable capture
             lock.lockForRead()
             capt = capture
             lock.unlock()
 
-            if capt :
+            # check if the button was clicked
+            if capt :  # if capture was clicked
                 mlock.lock()
                 capture = False
                 mlock.unlock()
-                continue_capture = True
-                return continue_capture
-            else:
-                continue_capture = False
+                return True # return True (a new capture must be take)
 
         # # PICK FROM POISelected
-        pick_from_POIselected(POISelected,tab_pose)
+        pick_from_POIselected(POISelected,tab_pose) # execution of the movements by the arm
 
-        return continue_capture
+        return False # no needs of a new capture, the movemnts were executed
 
     def pick_from_POIselected(POISelected, tab_pose):
         if len(POISelected) > len(tab_pose):
@@ -200,13 +214,13 @@ def main_thread(client):
         POISelected = []
         clickCoord = [0, 0]
         regionSize = 30
- 
+
         bottomLeftCornerOfText = (60,30)
         if len(bc) == 0:
             cv2.putText(image,'Shop is empty ! Add objects and click CAPTURE or press ENTER to quit', bottomLeftCornerOfText, cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,255),2)
         else:
             writeNames(image, preds, regionSize)
-        
+
         show_img('Workspace 2', image, wait_ms=10)
         cv2.setMouseCallback('Workspace 2', selectRectCallback, param=[POI, POISelected, regionSize])
         imgCached = image.copy()
@@ -245,7 +259,7 @@ def main_thread(client):
             try:
                 if obj_selected in np_preds:
                     name_obj_selected = np_preds[np_preds.index(obj_selected)-1]
-            
+
             except:
                 print('Object not recognized !')
                 continue
@@ -277,8 +291,6 @@ def main_thread(client):
 
             tab_pose, nb_obj_select = workshop_stream(client)
             lg_tab_pose = len(tab_pose)
-
-
 
             #mise a zéro du bouton Capture :
             mlock.lock()
@@ -312,7 +324,7 @@ class Ui_MainWindow(object):
         #####################################################
 
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(421, 400) 
+        MainWindow.resize(421, 400)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.sensib_slider = QtWidgets.QSlider(self.centralwidget)
