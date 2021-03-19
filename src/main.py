@@ -44,8 +44,8 @@ observation_pose_wkshop = PoseObject(
 
 # POS observation Packing AREA
 observation_pose_dwks = PoseObject(
-    x=0.2, y=0.0, z=0.34,
-    roll=0, pitch=1.57, yaw=-0.2,
+    x=0.168, y=-0.004, z=0.266,
+    roll=-0.339, pitch=1.457, yaw=-0.382,
 )
 
 # Position de repos
@@ -269,7 +269,7 @@ def main_thread(client):
 
     def workshop_stream(niryo_one_client):
         """
-        Initiate the video stream, find the objects to pick and place and let the user choose which ones to take  
+        Initiate the video stream, find the objects to pick and place and let the user choose which ones to take
         """
         global capture
         #mise a zéro du bouton Capture :
@@ -483,7 +483,7 @@ class Ui_MainWindow(object):
 
     def closeEvent(self):
         """
-        Handler called when the X button is clicked 
+        Handler called when the X button is clicked
         """
         global client
         if (client == None) : # if the client is not define
@@ -494,7 +494,7 @@ class Ui_MainWindow(object):
 
     def set_sensib(self,entier):
         """
-        Sensibility slider handler 
+        Sensibility slider handler
         """
         global sensibilite
         lock.lockForWrite()
@@ -503,7 +503,7 @@ class Ui_MainWindow(object):
 
     def set_space_lines(self,entier):
         """
-        Space between two lines slider handler 
+        Space between two lines slider handler
         """
         global space_lines
         lock.lockForWrite()
