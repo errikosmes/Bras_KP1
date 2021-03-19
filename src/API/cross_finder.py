@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Fri Jan 29 09:57:22 2021
+cross_finder.py : This is file is used to find lines cross in an image.
 
-@author: kat
+@authors: BORDEAU Raphaël - DE LA FUENTE Léo - GOURJON Amélie - MESSARA Errikos - PAGNY Louis
 """
 
 import cv2 as cv
@@ -280,7 +278,8 @@ def type_croisement(lines):
         #print('Une ou aucune droite')
 
     else:
-        if ( droites[0] % (np.pi/2) >= - 0.1 ) and (droites[1] % (np.pi/2) >= - 0.1) and ( droites[0] % (np.pi/2) <= 0.1 ) and (droites[1] % (np.pi/2) <=  0.1):
+        s=0.05
+        if ( droites[0] % (np.pi/2) >= - s ) and (droites[1] % (np.pi/2) >= - s) and ( droites[0] % (np.pi/2) <= s ) and (droites[1] % (np.pi/2) <=  s):
             type_droite = 0
             #print('Droite horizontale et verticale')
 
@@ -342,7 +341,7 @@ def find_croisement(lines):
                 inter.append(( round(x0i), round(y0i+y0j) ))
 
 
-    elif (type_droite > 0)  :
+    elif (type_droite > 0):
         for i in range ( len(tab_of_types)  ):
             for j in range ( len(tab_of_types[i]) ):
 
@@ -375,4 +374,4 @@ def find_croisement(lines):
         print('erreur')
 
     return(inter)
-        #
+        

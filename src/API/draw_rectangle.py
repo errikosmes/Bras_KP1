@@ -1,23 +1,35 @@
+"""
+draw_rectangle.py : This is file is used to write on image and interact with user
+@authors: BORDEAU Raphaël - DE LA FUENTE Léo - GOURJON Amélie - MESSARA Errikos - PAGNY Louis
+"""
+
 import cv2 as cv
 import numpy as np
 
-# =============================================================================
-# DESSINS RECTANGLE APPLICATION ERRIKOS
-# =============================================================================
 
 def writeNames(img, preds,size):
+    """
+    Write names of the objects predicted on image
+
+    """
     offset_y=20
     for elt in preds:
         img = cv.putText(img,elt[0].replace('_',' '), (elt[1][0]-size,elt[1][1]+size+offset_y) , cv.FONT_HERSHEY_SIMPLEX, 0.6,(0,255,255),2)
         
-
-
 def drawUnselected(img, rectCenter, size):
+    """
+    Draw a red rectangle on image
+
+    """
     img=cv.rectangle(img, (int(rectCenter[0])-size, int(rectCenter[1])-size), (int(rectCenter[0])+size, int(rectCenter[1])+size), (0, 0, 255), 3)
     return img
 
 def inRectangle(ctrCoord, size, mouseCoord):
-    # check if (mouseCoord) are inside a rectangle of centre (ctrCoord) and size (size)
+    """
+    check if (mouseCoord) are inside a rectangle of centre (ctrCoord) and size (size)
+
+    """
+    # 
     x1 = ctrCoord[0]-size
     y1 = ctrCoord[1]-size
     x2 = ctrCoord[0]+size
@@ -30,7 +42,10 @@ def inRectangle(ctrCoord, size, mouseCoord):
 
 # define the events for the mouse_click. 
 def selectRectCallback(event, x, y, flags, param):
-    # check if left mouse button was clicked and update PIO lists
+    """
+    check if left mouse button was clicked and update PIO lists
+
+    """
     if event == cv.EVENT_LBUTTONDOWN:
         POI = param[0]
         POISelected = param[1]
@@ -49,9 +64,12 @@ def selectRectCallback(event, x, y, flags, param):
 
         param[0] = POI
         param[1] = POISelected
-        # print(clickCoord);
 
 def drawSelected(img, rectCenter, size, nb):
+    """
+    Draw a green rectangle on image
+
+    """
     font      = cv.FONT_HERSHEY_SIMPLEX
     offset    = (20, -40)
     fontScale = 0.75
@@ -59,7 +77,6 @@ def drawSelected(img, rectCenter, size, nb):
     lineType  = 2
 
     cv.rectangle(img, (int(rectCenter[0])-size, int(rectCenter[1])-size), (int(rectCenter[0])+size, int(rectCenter[1])+size), (0, 255, 0), 3)
-    # cv2.circle(img, (rectCenter[0]-size, rectCenter[1]-size), 15, (0, 255, 0), -1)
     cv.putText(img, str(nb), (int(rectCenter[0])+offset[0], int(rectCenter[1])+offset[1]), font, fontScale,fontColor, lineType)
 
     return img

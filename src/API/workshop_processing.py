@@ -1,3 +1,10 @@
+"""
+Workshop_processing.py : This is file is used to find and detect object in a workspace.
+
+@authors: BORDEAU Raphaël - DE LA FUENTE Léo - GOURJON Amélie - MESSARA Errikos - PAGNY Louis
+"""
+
+
 # Imports
 from niryo_one_tcp_client import *
 from niryo_one_camera import *
@@ -5,166 +12,41 @@ import cv2 as cv
 import numpy as np
 import math
 import os
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 import tensorflow as tf
-
 
 objects_names = os.listdir("model IA/data/")
 model = tf.keras.models.load_model('model IA/model')
 
-def distance_euclidienne(p1,p2):
+class CameraObject(object):
+    def __init__(self, img, x=None, y=None, angle=None, cnt=None, box=None, square=None):
+        self.img = img
+        self.angle = angle
+        self.x = x
+        self.y = y
+        self.cnt = cnt
+        self.box = box
+        self.square = square
+        self.type = None
 
-    X = (p1[0]-p2[0])**2
-    Y = (p1[1]-p2[1])**2
-
-    return math.sqrt(X+Y)
-
-def keep_biggest_contours(img, bc):
-
-    bc_recherche = bc.copy()
-    new_bc = bc.copy()
-    j=0
-    while j < len(new_bc):
-        for i in range(0,len(bc_recherche)):
-            dist = distance_euclidienne(bc_recherche[j], bc_recherche[i])
-            if(dist == 0):
-                continue
-            if dist < 75:
-                new_bc.remove(bc_recherche[i])
-        j+=1
-    return new_bc
-
-def find_objects_workshop_old(image,nb_objets=10):
+def get_obj_pose(client, workspace, image):
     """
-    Trouve les barycentres des objets du workshop
+    Find objects pose from camera frame and return position of the objects found 
+
     Parameters
     ----------
-    image : Frame
-    nb_objets : Nombre d'objets du workshop
+    client : Niryoone client
+    workspace : Workspace to use
+    image : Frame from camera
 
     Returns
     -------
-    bc : Tableau des barycentres
+    objs_pose : table of position ofo detected objects
+    bc : table of barycenters
+    new_preds : Names and barycenters of detected objets
 
     """
-
-    img= remove_shadows(image)
-
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    mask = gray > 170
-    img_mask = gray * mask
-
-    objs = (img_mask == 0)*255
-    objs = objs.astype(np.uint8)
-    contours = biggest_contours_finder(objs,nb_contours_max=nb_objets)
-    # cv.drawContours(image, contours, -1, (0,255,0),3)
-
-    # Barycenters
-    bc = []
-    angles = []
-
-    for i in contours:
-        angle = get_contour_angle(i)
-        cx,cy = get_contour_barycenter(i)
-        bc.append((cx,cy))
-        angles.append(angle)
-
-    cpt=0
-    for (cx,cy) in bc:
-        img = cv2.putText(img, str(cpt),(cx,cy),cv.FONT_HERSHEY_SCRIPT_SIMPLEX, 1,color=(0,0,0), thickness=2)
-        cpt+=1
-
-
-    return bc, angles
-
-def find_objects_workshop(image):
-    """
-    Trouve les barycentres des objets du workshop
-    Parameters
-    ----------
-    image : Frame
-
-    Returns
-    -------
-    bc : Tableau des barycentres
-
-    """
-    img= remove_shadows(image)
-    img = standardize_img(img)
-
-    mask = objs_mask(img)
-    objs = extract_objs(img, mask)
-    cpt=0
-    bc=[]
-    angles=[]
-    for obj in objs:
-        img = cv2.putText(img, str(cpt),(obj.x,obj.y),cv.FONT_HERSHEY_SCRIPT_SIMPLEX, 1,color=(0,0,0), thickness=2)
-        cpt+=1
-        bc.append((obj.x,obj.y))
-        angles.append(obj.angle)
-    # plt.imshow(img)
-    return bc, angles
-
-def find_objects_workshop_ML(image):
-    """
-    Trouve les barycentres des objets du workshop
-    Parameters
-    ----------
-    image : Frame
-
-    Returns
-    -------
-    bc : Tableau des barycentres
-
-    """
-    def get_objs(img):
-        img = standardize_img(img)
-        mask = objs_mask(img)
-        objs = extract_objs(img, mask)
-        return objs
-
-    img=image
-    img_rs= remove_shadows(image)
-
-    objs_ml = get_objs(img)
-    objs_rs = get_objs(img_rs)
-
-    cpt=0
-    bc=[]
-    angles=[]
-
-    imgs = []
-    #resize all objects img to 64*64 pixels
-    for x in range(len(objs_ml)):
-        imgs.append(resize_img(objs_ml[x].img, width=64, height=64))
-
-    imgs = np.array(imgs)
-
-    #predict all the images
-    try:
-        predictions = model.predict(imgs)
-    except:
-        predictions=[]
-    objs_pred = []
-    for x in range(len(predictions)):
-        obj = objs_ml[x]
-        pred = predictions[x].argmax()
-        objs_pred.append([objects_names[pred],(obj.x,obj.y)])
-
-
-    for x in range(len(objs_rs)):
-        obj = objs_rs[x]
-        bc.append((obj.x,obj.y))
-        angles.append(obj.angle)
-
-    # plt.imshow(img)
-    return bc, angles, objs_pred
-
-
-
-def get_obj_pose(client, workspace, image,nb_objet=3):
+    
     # seuil_px, comparaison obj prédit et autres
     # bc, angles = find_objects_workshop(image)
     seuil_px = 30
@@ -192,6 +74,99 @@ def get_obj_pose(client, workspace, image,nb_objet=3):
 
     return objs_pose, bc, new_preds
 
+def find_objects_workshop(image):
+    """
+    Find barycenters of the workshop objects
+    Parameters
+    ----------
+    image : Frame
+
+    Returns
+    -------
+    bc : Barycenters table
+    angles : angles table
+
+    """
+    img= remove_shadows(image)
+    img = standardize_img(img)
+
+    mask = objs_mask(img)
+    objs = extract_objs(img, mask)
+    cpt=0
+    bc=[]
+    angles=[]
+    for obj in objs:
+        img = cv2.putText(img, str(cpt),(obj.x,obj.y),cv.FONT_HERSHEY_SCRIPT_SIMPLEX, 1,color=(0,0,0), thickness=2)
+        cpt+=1
+        bc.append((obj.x,obj.y))
+        angles.append(obj.angle)
+    return bc, angles
+
+def find_objects_workshop_ML(image):
+    """
+    Trouve les barycentres des objet
+    Parameters
+    ----------
+    image : Frame
+
+    Returns
+    -------
+    bc : Barycenters table
+    angles : angles table
+    objs_pred : Names and barycenters of detected objets
+    """
+    
+
+    img=image
+    img_rs= remove_shadows(image)
+
+    objs_ml = get_objs(img)    
+    objs_rs = get_objs(img_rs)
+
+    cpt=0
+    bc=[]
+    angles=[]
+
+    imgs = []
+    
+    #resize all objects img to 64*64 pixels
+    for x in range(len(objs_ml)):
+        imgs.append(resize_img(objs_ml[x].img, width=64, height=64))
+
+    imgs = np.array(imgs)
+
+    #predict all the images
+    try:
+        predictions = model.predict(imgs)
+    except:
+        predictions=[]
+    objs_pred = []
+    for x in range(len(predictions)):
+        obj = objs_ml[x]
+        pred = predictions[x].argmax()
+        objs_pred.append([objects_names[pred],(obj.x,obj.y)])
+
+
+    for x in range(len(objs_rs)):
+        obj = objs_rs[x]
+        bc.append((obj.x,obj.y))
+        angles.append(obj.angle)
+
+    return bc, angles, objs_pred
+
+def remove_shadows(img):
+    rgb_planes = cv.split(img)
+    result_planes = []
+
+    for plane in rgb_planes:
+        dilated_img = cv.dilate(plane, np.ones((7,7), np.uint8))
+        bg_img = cv.medianBlur(dilated_img, 11)
+        diff_img = 255 - cv.absdiff(plane, bg_img)
+        result_planes.append(diff_img)
+
+    result = cv.merge(result_planes)
+    return result
+
 
 # rotate a numpy img
 def rotate_image(image, angle):
@@ -199,18 +174,6 @@ def rotate_image(image, angle):
     rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
     result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
     return result
-
-
-class CameraObject(object):
-    def __init__(self, img, x=None, y=None, angle=None, cnt=None, box=None, square=None):
-        self.img = img
-        self.angle = angle
-        self.x = x
-        self.y = y
-        self.cnt = cnt
-        self.box = box
-        self.square = square
-        self.type = None
 
 def threshold_hls(img, list_min_hsv, list_max_hsv):
     frame_hsl = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
@@ -336,27 +299,55 @@ def standardize_img(img):
     img = img.astype(array_type)
     return img
 
-def remove_shadows(img):
-    rgb_planes = cv.split(img)
-    result_planes = []
+def keep_biggest_contours(img, bc):
+    """
+    
+    Parameters
+    ----------
+    img : numpy array of image.
+    bc : Barycenters of the contours.
 
-    for plane in rgb_planes:
-        dilated_img = cv.dilate(plane, np.ones((7,7), np.uint8))
-        bg_img = cv.medianBlur(dilated_img, 11)
-        diff_img = 255 - cv.absdiff(plane, bg_img)
-        result_planes.append(diff_img)
+    Returns
+    -------
+    new_bc : Barycenters of the biggest contours
 
-    result = cv.merge(result_planes)
-    return(result)
+    """
 
-# wkshop = "Workshop_v2"
-# robot_ip_address = "10.10.10.10"
+    bc_recherche = bc.copy()
+    new_bc = bc.copy()
+    j=0
+    while j < len(new_bc):
+        for i in range(0,len(bc_recherche)):
+            dist = distance_euclidienne(bc_recherche[j], bc_recherche[i])
+            if(dist == 0):
+                continue
+            if dist < 75:
+                new_bc.remove(bc_recherche[i])
+        j+=1
+    return new_bc
 
-# if __name__ == '__main__' :
-#     # Connect to robot
-#     client = NiryoOneClient()
-#     client.connect(robot_ip_address)
-#     # Calibrate robot if robot needs calibration
-#     client.calibrate(CalibrateMode.AUTO)
-#     a,bc = get_obj_pose(client, wkshop, image, 3)
-#     client.quit()
+def distance_euclidienne(p1,p2):
+    """
+    Parameters
+    ----------
+    p1 : Tuple, Point coordinate.
+    p2 : Tuple, Point coordinate.
+
+    Returns 
+    -------
+    Euclidean distance between two points
+
+    """
+
+    X = (p1[0]-p2[0])**2
+    Y = (p1[1]-p2[1])**2
+    return math.sqrt(X+Y)
+
+def get_objs(img):
+    """
+    Extract objects of an image
+    """
+    img = standardize_img(img)
+    mask = objs_mask(img)
+    objs = extract_objs(img, mask)
+    return objs
