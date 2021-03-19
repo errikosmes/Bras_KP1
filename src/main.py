@@ -181,6 +181,9 @@ def main_thread(client):
         return False # no needs of a new capture, the movemnts were executed
 
     def pick_from_POIselected(POISelected, tab_pose):
+        """
+        Pick and place the selected objects
+        """
         if len(POISelected) > len(tab_pose):
             print("[ERROR] Placement point greater than number of object")
 
@@ -250,8 +253,6 @@ def main_thread(client):
             if key in [27, ord('\n'), ord('\r'), ord("q")]:  # Will break loop if the user press Escape or Q
                 break
 
-
-
         tab_pose=[]
         for obj_selected in POISelected:
             if obj_selected in bc:
@@ -267,6 +268,9 @@ def main_thread(client):
         return tab_pose, len(POISelected)
 
     def workshop_stream(niryo_one_client):
+        """
+        Initiate the video stream, find the objects to pick and place and let the user choose which ones to take  
+        """
         global capture
         #mise a zéro du bouton Capture :
         mlock.lock()
@@ -279,14 +283,17 @@ def main_thread(client):
             if img_workspace is not None:
                 sleep(1)
                 tab_pose, nb_obj_selected = find_target(niryo_one_client, resize_img(img_workspace, height=res_img_markers.shape[0]))
-                if tab_pose == False and nb_obj_selected == False :
+                if tab_pose == False and nb_obj_selected == False:
                     continue #reboucle car le bouton Capture a été actionné
                 return tab_pose, nb_obj_selected
 
     def main_select_pick2(client):
+        """
+        A wrapper for select and pick
+        """
         global capture
         nb_obj_select = -1
-        lg_tab_pose=0
+        lg_tab_pose = 0
         while nb_obj_select != lg_tab_pose:
 
             tab_pose, nb_obj_select = workshop_stream(client)
@@ -299,7 +306,6 @@ def main_thread(client):
             continue_capture = True
             while continue_capture:
                 continue_capture = select_and_pick(client,tab_pose)
-
 
             if nb_obj_select != lg_tab_pose:
                 ans = input("Shop is not empty, do you want to pick other object ? (y/n)")
@@ -317,7 +323,6 @@ def main_thread(client):
 class Ui_MainWindow(object):
 
     def setupUi(self, MainWindow):
-
         ###################### AJOUT ! ######################
         # garder les lignes suivantes lors de la réécriture de l'interface !
         app.aboutToQuit.connect(self.closeEvent) #connect le bouton X à "closeEvent"
@@ -461,6 +466,9 @@ class Ui_MainWindow(object):
 
 
     def retranslateUi(self, MainWindow):
+        """
+        Set GUI text
+        """
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.Capture.setText(_translate("MainWindow", "Capture"))
@@ -473,8 +481,10 @@ class Ui_MainWindow(object):
         self.label_adresse_ip.setText(_translate("MainWindow", "IP adress : "))
         self.connect_button.setText(_translate("MainWindow", "Connect"))
 
-    def closeEvent(self) :
-        ''' call when the X button is clicked '''
+    def closeEvent(self):
+        """
+        Handler called when the X button is clicked 
+        """
         global client
         if (client == None) : # if the client is not define
             return
@@ -482,31 +492,46 @@ class Ui_MainWindow(object):
             client.move_joints(*sleep_joints)
             client.set_learning_mode(True)
 
-    def set_sensib(self,entier) :
+    def set_sensib(self,entier):
+        """
+        Sensibility slider handler 
+        """
         global sensibilite
         lock.lockForWrite()
         sensibilite=entier
         lock.unlock()
 
-    def set_space_lines(self,entier) :
+    def set_space_lines(self,entier):
+        """
+        Space between two lines slider handler 
+        """
         global space_lines
         lock.lockForWrite()
         space_lines=entier
         lock.unlock()
 
-    def set_space_point(self,entier) :
+    def set_space_point(self,entier):
+        """
+        Space between two points slider handler
+        """
         global space_point
         lock.lockForWrite()
         space_point=entier
         lock.unlock()
 
-    def set_capture (self) :
+    def set_capture (self):
+        """
+        Capture button handler
+        """
         global capture
         mlock.lock()
         capture=True
         mlock.unlock()
 
-    def set_connection (self) :
+    def set_connection (self):
+        """
+        Connection button handler
+        """
         global robot_ip_address
         robot_ip_address = self.lineEdit_ip.text()
         print (robot_ip_address)
@@ -515,7 +540,8 @@ class Ui_MainWindow(object):
 
     def enable_disable(self,var=False) :
         ''' enable slider part and disable ip part when var == True
-            disable slider part and enable ip part when var == False'''
+            disable slider part and enable ip part when var == False
+        '''
         self.lineEdit_ip.setEnabled(not(var))
         self.label_adresse_ip.setEnabled(not(var))
         self.connect_button.setEnabled(not(var))
@@ -547,18 +573,19 @@ class Ui_MainWindow(object):
 
 
 class robot_opencv(QObject):
+    """
+    Class that starts the main thread and sets the robot in learning mode in case of a problem
+    """
 
     def run (self) :
         global client
-
-
-        # Connect to robot
+        # Connect to the robot
         client = NiryoOneClient()
         client.connect(robot_ip_address)
-        # Calibrate robot if robot needs calibration
+        # Calibrate the robot if needed
         client.calibrate(CalibrateMode.AUTO)
         client.change_tool(tool_used)
-        #programme principal
+        #main program
         try :
             main_thread(client)
 
