@@ -36,10 +36,10 @@ tool_used = RobotTool.GRIPPER_2
 wkshop = "Workshop_v2"
 dwks = "default_workspace"  # Robot's placing Workspace Name
 
-# POS observation workshop
+# POS observation workshop (Obs workshop v5)
 observation_pose_wkshop = PoseObject(
-    x=-0.00, y=-0.21, z=0.24,
-    roll=1.47, pitch=1.46, yaw=-0.22,
+    x=-0.0002, y=-0.199, z=0.262,
+    roll=-0.504, pitch=1.553, yaw=-2.078,
 )
 
 # POS observation Packing AREA

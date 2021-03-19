@@ -328,11 +328,17 @@ def find_croisement(lines):
 # =============================================================================
 
     if type_droite==0 :
-        for i in range ( len(tab_of_types[1])  ):
-            x0i= np.cos(tab_of_types[1][i][1]) * tab_of_types[1][i][0]
-            y0i= np.sin(tab_of_types[1][i][1]) * tab_of_types[1][i][0]
-            for j in range ( len(tab_of_types[0]) ):
-                y0j= np.sin(tab_of_types[0][j][1]) * tab_of_types[0][j][0]
+        if (tab_of_types[1][0][1] == 0):
+            h=1
+            v=0
+        else:
+            h=0
+            v=1
+        for i in range ( len(tab_of_types[h])  ):
+            x0i= np.cos(tab_of_types[h][i][1]) * tab_of_types[h][i][0]
+            y0i= np.sin(tab_of_types[h][i][1]) * tab_of_types[h][i][0]
+            for j in range ( len(tab_of_types[v]) ):
+                y0j= np.sin(tab_of_types[v][j][1]) * tab_of_types[v][j][0]
                 inter.append(( round(x0i), round(y0i+y0j) ))
 
 
