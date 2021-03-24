@@ -44,8 +44,8 @@ observation_pose_wkshop = PoseObject(
 
 # POS observation Packing AREA
 observation_pose_dwks = PoseObject(
-    x=0.168, y=-0.004, z=0.266,
-    roll=-0.339, pitch=1.457, yaw=-0.382,
+    x=0.143, y=-0.004, z=0.287,
+    roll=-0.086, pitch=1.395, yaw=-0.275,
 )
 
 # Position de repos
